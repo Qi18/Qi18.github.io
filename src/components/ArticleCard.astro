@@ -1,0 +1,40 @@
+---
+interface Props {
+  post: {
+    id: string;
+    data: {
+      title: string;
+      description: string;
+      publishedAt: Date;
+      tags: string[];
+      series?: string;
+    };
+  };
+  featured?: boolean;
+}
+
+const { post, featured = false } = Astro.props;
+const date = post.data.publishedAt.toLocaleDateString('zh-CN', {
+  year: 'numeric',
+  month: '2-digit',
+  day: '2-digit',
+});
+---
+
+<article class:list={['article-card', { featured }]}>
+  <div class="article-card-topline">
+    <time datetime={post.data.publishedAt.toISOString()}>{date}</time>
+    {post.data.series && <span>{post.data.series}</span>}
+  </div>
+  <h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3>
+  <p>{post.data.description}</p>
+  <div class="article-card-footer">
+    <div class="tag-list" aria-label="文章标签">
+      {post.data.tags.slice(0, 3).map((tag) => <span>#{tag}</span>)}
+    </div>
+    <a class="read-more" href={`/posts/${post.id}/`} aria-label={`阅读《${post.data.title}》`}>
+      阅读
+      <svg viewBox="0 0 20 20" aria-hidden="true"><path d="m7 4 6 6-6 6"></path></svg>
+    </a>
+  </div>
+</article>

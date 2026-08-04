@@ -1,0 +1,53 @@
+---
+import { getCollection, render, type CollectionEntry } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', ({ data }) => !data.draft);
+  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+}
+
+interface Props {
+  post: CollectionEntry<'posts'>;
+}
+
+const { post } = Astro.props;
+const { Content, headings } = await render(post);
+const date = post.data.publishedAt.toLocaleDateString('zh-CN', {
+  year: 'numeric',
+  month: 'long',
+  day: 'numeric',
+});
+---
+
+<BaseLayout title={post.data.title} description={post.data.description} article>
+  <article class="post shell">
+    <header class="post-header">
+      <a class="back-link" href="/posts">← 返回文章</a>
+      {post.data.series && <p class="post-series">{post.data.series}</p>}
+      <h1>{post.data.title}</h1>
+      <p class="post-description">{post.data.description}</p>
+      <div class="post-meta">
+        <time datetime={post.data.publishedAt.toISOString()}>{date}</time>
+        <span>·</span>
+        <div class="tag-list">
+          {post.data.tags.map((tag) => <a href={`/tags/${encodeURIComponent(tag)}/`}>#{tag}</a>)}
+        </div>
+      </div>
+    </header>
+
+    <div class="post-layout">
+      <div class="prose"><Content /></div>
+      {headings.length > 0 && (
+        <aside class="toc">
+          <p>本页目录</p>
+          <nav aria-label="本页目录">
+            {headings.filter((heading) => heading.depth <= 3).map((heading) => (
+              <a class:list={[`toc-depth-${heading.depth}`]} href={`#${heading.slug}`}>{heading.text}</a>
+            ))}
+          </nav>
+        </aside>
+      )}
+    </div>
+  </article>
+</BaseLayout>

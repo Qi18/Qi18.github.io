@@ -1,0 +1,21 @@
+---
+import { getCollection } from 'astro:content';
+import ArticleCard from '../../components/ArticleCard.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf());
+---
+
+<BaseLayout title="文章" description="所有关于 LLM、工程实践和持续学习的文章。">
+  <header class="page-header shell">
+    <p class="eyebrow"><span></span> ALL WRITING</p>
+    <h1>文章</h1>
+    <p>把做过的事讲清楚，把想明白的事留下来。</p>
+  </header>
+  <section class="shell page-content">
+    <div class="article-list">
+      {posts.map((post) => <ArticleCard post={post} />)}
+    </div>
+  </section>
+</BaseLayout>

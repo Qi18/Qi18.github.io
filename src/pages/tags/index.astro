@@ -1,0 +1,30 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+
+const posts = await getCollection('posts', ({ data }) => !data.draft);
+const tagCounts = posts.flatMap((post) => post.data.tags).reduce<Record<string, number>>((counts, tag) => {
+  counts[tag] = (counts[tag] ?? 0) + 1;
+  return counts;
+}, {});
+const tags = Object.entries(tagCounts).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+---
+
+<BaseLayout title="标签" description="按主题浏览全部文章。">
+  <header class="page-header shell">
+    <p class="eyebrow"><span></span> TOPIC INDEX</p>
+    <h1>标签</h1>
+    <p>不同主题彼此连接，慢慢长成一张知识网络。</p>
+  </header>
+  <section class="shell page-content">
+    <div class="tag-index">
+      {tags.map(([tag, count], index) => (
+        <a href={`/tags/${encodeURIComponent(tag)}/`}>
+          <span class="tag-number">{String(index + 1).padStart(2, '0')}</span>
+          <strong>{tag}</strong>
+          <span class="tag-count">{count} 篇</span>
+        </a>
+      ))}
+    </div>
+  </section>
+</BaseLayout>

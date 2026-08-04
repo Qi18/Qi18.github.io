@@ -1,0 +1,77 @@
+---
+import { getCollection } from 'astro:content';
+import ArticleCard from '../components/ArticleCard.astro';
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const posts = (await getCollection('posts', ({ data }) => !data.draft))
+  .sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf());
+const featuredPosts = posts.filter((post) => post.data.featured).slice(0, 3);
+const shownPosts = featuredPosts.length ? featuredPosts : posts.slice(0, 3);
+const tags = [...new Set(posts.flatMap((post) => post.data.tags))];
+---
+
+<BaseLayout>
+  <section class="hero shell">
+    <div class="hero-copy">
+      <p class="eyebrow"><span></span> PERSONAL FIELD NOTES</p>
+      <h1>把复杂的事，<br /><em>想清楚，做出来。</em></h1>
+      <p class="hero-intro">
+        你好，我是 Rich。这里是我的个人工作台，记录 LLM 学习、工程实践，以及那些值得反复思考的问题。
+      </p>
+      <div class="hero-actions">
+        <a class="button primary" href="/posts">开始阅读</a>
+        <a class="button secondary" href="/about">认识我 <span>↗</span></a>
+      </div>
+    </div>
+    <aside class="status-card" aria-label="当前关注">
+      <div class="status-header">
+        <span class="status-dot"></span>
+        <span>NOW / 现在</span>
+        <span class="status-index">01</span>
+      </div>
+      <p>正在搭建一套从原理、源码到真实训练实验的 LLM 学习系统。</p>
+      <div class="status-topics">
+        <span>NanoChat</span>
+        <span>RLHF</span>
+        <span>RAG</span>
+      </div>
+      <div class="status-line"></div>
+      <small>LAST UPDATED · AUG 2026</small>
+    </aside>
+  </section>
+
+  <section class="signal-strip" aria-label="博客主题">
+    <div class="shell signal-inner">
+      <span>BUILD</span><i>✦</i><span>LEARN</span><i>✦</i><span>THINK</span><i>✦</i><span>WRITE</span>
+    </div>
+  </section>
+
+  <section class="section shell">
+    <div class="section-heading">
+      <div>
+        <p class="section-kicker">SELECTED WRITING</p>
+        <h2>最近文章</h2>
+      </div>
+      <a class="text-link" href="/posts">查看全部 <span>→</span></a>
+    </div>
+    <div class="article-grid">
+      {shownPosts.map((post, index) => <ArticleCard post={post} featured={index === 0} />)}
+    </div>
+  </section>
+
+  <section class="topics-section">
+    <div class="shell topics-inner">
+      <div>
+        <p class="section-kicker">TOPICS</p>
+        <h2>沿着兴趣，<br />建立自己的知识坐标。</h2>
+      </div>
+      <div class="topic-cloud">
+        {tags.map((tag, index) => (
+          <a href={`/tags/${encodeURIComponent(tag)}/`}>
+            <span>{String(index + 1).padStart(2, '0')}</span>{tag}
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+</BaseLayout>
