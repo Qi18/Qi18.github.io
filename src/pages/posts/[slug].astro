@@ -1,34 +1,58 @@
 ---
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getReadingMinutes, sortPostsByDate } from '../../lib/posts';
 
 export async function getStaticPaths() {
-  const posts = await getCollection('posts', ({ data }) => !data.draft);
-  return posts.map((post) => ({ params: { slug: post.id }, props: { post } }));
+  const posts = sortPostsByDate(await getCollection('posts', ({ data }) => !data.draft));
+  return posts.map((post, index) => ({
+    params: { slug: post.id },
+    props: {
+      post,
+      olderPost: posts[index + 1],
+      newerPost: posts[index - 1],
+    },
+  }));
 }
 
 interface Props {
   post: CollectionEntry<'posts'>;
+  olderPost?: CollectionEntry<'posts'>;
+  newerPost?: CollectionEntry<'posts'>;
 }
 
-const { post } = Astro.props;
+const { post, olderPost, newerPost } = Astro.props;
 const { Content, headings } = await render(post);
-const date = post.data.publishedAt.toLocaleDateString('zh-CN', {
+const tocHeadings = headings.filter((heading) => heading.depth <= 3);
+const readingMinutes = getReadingMinutes(post.body ?? '');
+const formatDate = (value: Date) => value.toLocaleDateString('zh-CN', {
   year: 'numeric',
   month: 'long',
   day: 'numeric',
 });
+const date = formatDate(post.data.publishedAt);
+const updatedDate = post.data.updatedAt ? formatDate(post.data.updatedAt) : undefined;
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description} article>
+  <div class="reading-progress" aria-hidden="true"><span></span></div>
   <article class="post shell">
     <header class="post-header">
       <a class="back-link" href="/posts">← 返回文章</a>
-      {post.data.series && <p class="post-series">{post.data.series}</p>}
+      {post.data.series && (
+        <p class="post-series">
+          <a href={`/series/${encodeURIComponent(post.data.series)}/`}>
+            {post.data.series}{post.data.seriesOrder ? ` · ${String(post.data.seriesOrder).padStart(2, '0')}` : ''}
+          </a>
+        </p>
+      )}
       <h1>{post.data.title}</h1>
       <p class="post-description">{post.data.description}</p>
       <div class="post-meta">
         <time datetime={post.data.publishedAt.toISOString()}>{date}</time>
+        <span>·</span>
+        <span>{readingMinutes} 分钟阅读</span>
+        {updatedDate && <><span>·</span><span>更新于 {updatedDate}</span></>}
         <span>·</span>
         <div class="tag-list">
           {post.data.tags.map((tag) => <a href={`/tags/${encodeURIComponent(tag)}/`}>#{tag}</a>)}
@@ -36,18 +60,82 @@ const date = post.data.publishedAt.toLocaleDateString('zh-CN', {
       </div>
     </header>
 
+    {tocHeadings.length > 0 && (
+      <details class="mobile-toc">
+        <summary>本页目录 <span>{tocHeadings.length} 节</span></summary>
+        <nav aria-label="移动端本页目录">
+          {tocHeadings.map((heading) => (
+            <a class:list={[`toc-depth-${heading.depth}`]} href={`#${heading.slug}`}>{heading.text}</a>
+          ))}
+        </nav>
+      </details>
+    )}
+
     <div class="post-layout">
       <div class="prose"><Content /></div>
-      {headings.length > 0 && (
+      {tocHeadings.length > 0 && (
         <aside class="toc">
           <p>本页目录</p>
           <nav aria-label="本页目录">
-            {headings.filter((heading) => heading.depth <= 3).map((heading) => (
+            {tocHeadings.map((heading) => (
               <a class:list={[`toc-depth-${heading.depth}`]} href={`#${heading.slug}`}>{heading.text}</a>
             ))}
           </nav>
         </aside>
       )}
     </div>
+
+    {(olderPost || newerPost) && (
+      <nav class="post-navigation" aria-label="文章翻页">
+        {olderPost ? (
+          <a class="post-navigation-item" href={`/posts/${olderPost.id}/`}>
+            <span>← 上一篇</span>
+            <strong>{olderPost.data.title}</strong>
+          </a>
+        ) : <span></span>}
+        {newerPost && (
+          <a class="post-navigation-item next" href={`/posts/${newerPost.id}/`}>
+            <span>下一篇 →</span>
+            <strong>{newerPost.data.title}</strong>
+          </a>
+        )}
+      </nav>
+    )}
   </article>
+
+  <script>
+    const progressBar = document.querySelector<HTMLElement>('.reading-progress span');
+    const article = document.querySelector<HTMLElement>('.post');
+
+    const updateReadingProgress = () => {
+      if (!progressBar || !article) return;
+      const start = article.offsetTop;
+      const distance = article.offsetHeight - window.innerHeight;
+      const progress = distance > 0 ? Math.min(1, Math.max(0, (window.scrollY - start) / distance)) : 1;
+      progressBar.style.transform = `scaleX(${progress})`;
+    };
+
+    updateReadingProgress();
+    window.addEventListener('scroll', updateReadingProgress, { passive: true });
+    window.addEventListener('resize', updateReadingProgress);
+
+    document.querySelectorAll<HTMLElement>('.prose pre').forEach((block) => {
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'code-copy';
+      button.textContent = '复制';
+      button.setAttribute('aria-label', '复制代码');
+      button.addEventListener('click', async () => {
+        const code = block.querySelector('code')?.textContent ?? block.textContent ?? '';
+        try {
+          await navigator.clipboard.writeText(code);
+          button.textContent = '已复制';
+        } catch {
+          button.textContent = '复制失败';
+        }
+        window.setTimeout(() => { button.textContent = '复制'; }, 1600);
+      });
+      block.append(button);
+    });
+  </script>
 </BaseLayout>

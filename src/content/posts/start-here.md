@@ -6,6 +6,7 @@ tags:
   - 随笔
   - 写作
 series: "建站手记"
+seriesOrder: 1
 draft: false
 featured: true
 ---

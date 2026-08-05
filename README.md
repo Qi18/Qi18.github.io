@@ -2,6 +2,14 @@
 
 一个使用 Astro 构建的个人博客，内容以 Markdown / MDX 保存。
 
+## V2 功能
+
+- 按系列组织文章并提供顺序阅读入口。
+- 静态全文搜索，无需后端服务。
+- 文章阅读时间、阅读进度、移动端目录和代码复制。
+- 上一篇 / 下一篇文章导航。
+- GitHub Actions 自动部署到 GitHub Pages。
+
 ## 本地运行
 
 ```bash
@@ -29,12 +37,12 @@ featured: false
 ---
 ```
 
-## 上线前需要替换
+## 内容配置
 
-1. 修改 `src/site.config.ts` 中的站名、邮箱和 GitHub 地址。
-2. 修改 `astro.config.mjs` 中的正式域名。
-3. 按需要替换首页与关于页中的个人介绍。
-4. 删除或改写三篇示例文章。
+1. 在 `src/site.config.ts` 中维护站名和 GitHub 地址。
+2. 在 `astro.config.mjs` 中维护正式域名。
+3. 按需要修改首页与关于页中的个人介绍。
+4. 在 Frontmatter 中使用 `series` 和 `seriesOrder` 组织系列阅读顺序。
 
 ## 构建
 
@@ -43,4 +51,4 @@ pnpm build
 pnpm preview
 ```
 
-`dist/` 目录可以直接部署到 Cloudflare Pages、Vercel 或其他静态托管平台。
+`main` 分支推送到 GitHub 后，由 `.github/workflows/deploy-pages.yml` 自动构建并发布到 GitHub Pages。

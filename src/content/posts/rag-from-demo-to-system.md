@@ -7,6 +7,7 @@ tags:
   - 工程实践
   - LLM
 series: "LLM 应用实践"
+seriesOrder: 1
 draft: false
 featured: true
 ---

@@ -7,6 +7,7 @@ tags:
   - LLM
   - 源码阅读
 series: "NanoChat 源码学习"
+seriesOrder: 1
 draft: false
 featured: true
 ---

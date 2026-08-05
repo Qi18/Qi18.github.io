@@ -2,12 +2,16 @@
 import { getCollection } from 'astro:content';
 import ArticleCard from '../components/ArticleCard.astro';
 import BaseLayout from '../layouts/BaseLayout.astro';
+import { sortPostsByDate } from '../lib/posts';
 
-const posts = (await getCollection('posts', ({ data }) => !data.draft))
-  .sort((a, b) => b.data.publishedAt.valueOf() - a.data.publishedAt.valueOf());
+const posts = sortPostsByDate(await getCollection('posts', ({ data }) => !data.draft));
 const featuredPosts = posts.filter((post) => post.data.featured).slice(0, 3);
 const shownPosts = featuredPosts.length ? featuredPosts : posts.slice(0, 3);
 const tags = [...new Set(posts.flatMap((post) => post.data.tags))];
+const seriesGroups = Object.entries(posts.reduce<Record<string, typeof posts>>((groups, post) => {
+  if (post.data.series) (groups[post.data.series] ??= []).push(post);
+  return groups;
+}, {})).slice(0, 3);
 ---
 
 <BaseLayout>
@@ -20,7 +24,7 @@ const tags = [...new Set(posts.flatMap((post) => post.data.tags))];
       </p>
       <div class="hero-actions">
         <a class="button primary" href="/posts">开始阅读</a>
-        <a class="button secondary" href="/about">认识我 <span>↗</span></a>
+        <a class="button secondary" href="/search">搜索内容 <span>⌕</span></a>
       </div>
     </div>
     <aside class="status-card" aria-label="当前关注">
@@ -56,6 +60,29 @@ const tags = [...new Set(posts.flatMap((post) => post.data.tags))];
     </div>
     <div class="article-grid">
       {shownPosts.map((post, index) => <ArticleCard post={post} featured={index === 0} />)}
+    </div>
+  </section>
+
+  <section class="series-section shell">
+    <div class="section-heading">
+      <div>
+        <p class="section-kicker">GUIDED READING</p>
+        <h2>沿着系列，读懂一个问题</h2>
+      </div>
+      <a class="text-link" href="/series">全部系列 <span>→</span></a>
+    </div>
+    <div class="series-grid">
+      {seriesGroups.map(([series, entries], index) => (
+        <a class="series-card" href={`/series/${encodeURIComponent(series)}/`}>
+          <div class="series-card-index">{String(index + 1).padStart(2, '0')}</div>
+          <div>
+            <p>{entries.length} POSTS / SERIES</p>
+            <h3>{series}</h3>
+            <span>从《{entries[0].data.title}》开始</span>
+          </div>
+          <i>↗</i>
+        </a>
+      ))}
     </div>
   </section>
 

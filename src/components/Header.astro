@@ -22,6 +22,15 @@ const currentPath = Astro.url.pathname;
           </a>
         ))}
       </nav>
+      <a
+        class="search-link"
+        href="/search"
+        aria-label="搜索文章"
+        aria-current={currentPath.startsWith('/search') ? 'page' : undefined}
+        title="搜索文章"
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
+      </a>
       <button class="theme-toggle" type="button" aria-label="切换深浅色主题" title="切换主题">
         <svg class="sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path></svg>
         <svg class="moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z"></path></svg>

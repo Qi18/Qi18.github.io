@@ -1,0 +1,111 @@
+---
+import { getCollection } from 'astro:content';
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { sortPostsByDate, toSearchText } from '../lib/posts';
+
+const posts = sortPostsByDate(await getCollection('posts', ({ data }) => !data.draft));
+const searchItems = posts.map((post) => ({
+  title: post.data.title,
+  description: post.data.description,
+  date: post.data.publishedAt.toISOString(),
+  tags: post.data.tags,
+  series: post.data.series ?? '',
+  url: `/posts/${post.id}/`,
+  content: toSearchText(post.body ?? ''),
+}));
+---
+
+<BaseLayout title="搜索" description="搜索博客中的文章、系列和标签。">
+  <header class="page-header shell search-header">
+    <p class="eyebrow"><span></span> SEARCH THE NOTES</p>
+    <h1>搜索</h1>
+    <p>输入标题、系列、标签或正文关键词。</p>
+  </header>
+
+  <section class="search-page shell">
+    <label class="search-box">
+      <span class="search-box-label">关键词</span>
+      <input id="search-input" type="search" placeholder="例如：NanoChat、RAG、训练脚本" autocomplete="off" autofocus />
+      <span class="search-shortcut">/</span>
+    </label>
+    <p id="search-summary" class="search-summary" aria-live="polite"></p>
+    <div id="search-results" class="search-results"></div>
+    <noscript><p class="search-empty">搜索功能需要启用 JavaScript。</p></noscript>
+  </section>
+
+  <script is:inline define:vars={{ searchItems }}>
+    const input = document.querySelector('#search-input');
+    const summary = document.querySelector('#search-summary');
+    const results = document.querySelector('#search-results');
+
+    const escapeHtml = (value) => String(value)
+      .replaceAll('&', '&amp;')
+      .replaceAll('<', '&lt;')
+      .replaceAll('>', '&gt;')
+      .replaceAll('"', '&quot;')
+      .replaceAll("'", '&#039;');
+
+    const formatDate = (value) => new Intl.DateTimeFormat('zh-CN', {
+      year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date(value));
+
+    const render = (query = '') => {
+      const normalized = query.trim().toLocaleLowerCase('zh-CN');
+      const tokens = normalized.split(/\s+/).filter(Boolean);
+      const matches = searchItems
+        .map((item) => {
+          const title = item.title.toLocaleLowerCase('zh-CN');
+          const description = item.description.toLocaleLowerCase('zh-CN');
+          const series = item.series.toLocaleLowerCase('zh-CN');
+          const tags = item.tags.join(' ').toLocaleLowerCase('zh-CN');
+          const content = item.content.toLocaleLowerCase('zh-CN');
+          const haystack = `${title} ${description} ${series} ${tags} ${content}`;
+          if (tokens.length && !tokens.every((token) => haystack.includes(token))) return null;
+          const score = tokens.reduce((total, token) => total
+            + (title.includes(token) ? 8 : 0)
+            + (series.includes(token) ? 5 : 0)
+            + (tags.includes(token) ? 3 : 0)
+            + (description.includes(token) ? 2 : 0)
+            + (content.includes(token) ? 1 : 0), 0);
+          return { ...item, score };
+        })
+        .filter(Boolean)
+        .sort((a, b) => b.score - a.score || new Date(b.date) - new Date(a.date))
+        .slice(0, normalized ? 20 : 6);
+
+      summary.textContent = normalized
+        ? `找到 ${matches.length} 篇相关文章`
+        : `最近更新 · ${matches.length} 篇`;
+
+      results.innerHTML = matches.length ? matches.map((item) => `
+        <article class="search-result-card">
+          <div class="search-result-meta">
+            <time>${formatDate(item.date)}</time>
+            ${item.series ? `<span>${escapeHtml(item.series)}</span>` : ''}
+          </div>
+          <h2><a href="${item.url}">${escapeHtml(item.title)}</a></h2>
+          <p>${escapeHtml(item.description)}</p>
+          <div class="search-result-tags">${item.tags.map((tag) => `<span>#${escapeHtml(tag)}</span>`).join('')}</div>
+        </article>
+      `).join('') : '<p class="search-empty">没有找到匹配内容，试试更短的关键词。</p>';
+    };
+
+    const initialQuery = new URLSearchParams(window.location.search).get('q') ?? '';
+    input.value = initialQuery;
+    render(initialQuery);
+
+    input.addEventListener('input', () => {
+      render(input.value);
+      const url = new URL(window.location.href);
+      input.value.trim() ? url.searchParams.set('q', input.value.trim()) : url.searchParams.delete('q');
+      window.history.replaceState({}, '', url);
+    });
+
+    window.addEventListener('keydown', (event) => {
+      if (event.key === '/' && document.activeElement !== input) {
+        event.preventDefault();
+        input.focus();
+      }
+    });
+  </script>
+</BaseLayout>
