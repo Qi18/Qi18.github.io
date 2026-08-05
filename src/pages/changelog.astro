@@ -3,12 +3,26 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 const releases = [
   {
+    version: 'V5',
+    date: '2026 / 08 / 05',
+    title: '让博客沿着知识库生长',
+    description: '不再用扁平文章列表代替知识结构，让公开笔记继承 Obsidian 的目录、编号与上下文。',
+    items: ['公开知识目录树', 'Obsidian 路径与数字顺序', '文章知识库面包屑', '目录关键词搜索与独立文章分区'],
+    current: true,
+  },
+  {
+    version: 'V4',
+    date: '2026 / 08 / 05',
+    title: '建立私有知识与公开写作的边界',
+    description: '完整 Vault 留在私有仓库，博客只接收明确标记为公开的笔记。',
+    items: ['私有 Vault 备份', 'publish:true 白名单', 'Wiki Link 与图片转换', '公开内容安全检查'],
+  },
+  {
     version: 'V3',
     date: '2026 / 08 / 05',
     title: '让博客更像一个人',
     description: '补全个人主页和知识地图，让读者知道我在关注什么、怎样工作，以及从哪里开始阅读。',
     items: ['个人主页与当前学习方向', '项目和知识阅读地图', '文章分享、复制链接与返回顶部', '独立的站点更新记录'],
-    current: true,
   },
   {
     version: 'V2',

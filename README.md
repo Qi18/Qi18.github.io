@@ -2,6 +2,13 @@
 
 一个使用 Astro 构建的个人博客，内容以 Markdown / MDX 保存。
 
+## V5 功能
+
+- 公开文章自动继承 Obsidian 的目录层级和数字编号。
+- 新增知识库树形入口，只展示包含公开文章的目录分支。
+- 文章页显示知识库面包屑，搜索支持目录关键词。
+- 手写博客文章与 Obsidian 知识笔记保持独立展示。
+
 ## V4 功能
 
 - 完整 Obsidian Vault 保存到私有仓库 `Qi18/knowledge-vault-private`。

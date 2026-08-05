@@ -10,6 +10,7 @@ const searchItems = posts.map((post) => ({
   date: post.data.publishedAt.toISOString(),
   tags: post.data.tags,
   series: post.data.series ?? '',
+  knowledgePath: post.data.knowledgePath?.join(' / ') ?? '',
   url: `/posts/${post.id}/`,
   content: toSearchText(post.body ?? ''),
 }));
@@ -58,12 +59,14 @@ const searchItems = posts.map((post) => ({
           const description = item.description.toLocaleLowerCase('zh-CN');
           const series = item.series.toLocaleLowerCase('zh-CN');
           const tags = item.tags.join(' ').toLocaleLowerCase('zh-CN');
+          const knowledgePath = item.knowledgePath.toLocaleLowerCase('zh-CN');
           const content = item.content.toLocaleLowerCase('zh-CN');
-          const haystack = `${title} ${description} ${series} ${tags} ${content}`;
+          const haystack = `${title} ${description} ${series} ${knowledgePath} ${tags} ${content}`;
           if (tokens.length && !tokens.every((token) => haystack.includes(token))) return null;
           const score = tokens.reduce((total, token) => total
             + (title.includes(token) ? 8 : 0)
             + (series.includes(token) ? 5 : 0)
+            + (knowledgePath.includes(token) ? 5 : 0)
             + (tags.includes(token) ? 3 : 0)
             + (description.includes(token) ? 2 : 0)
             + (content.includes(token) ? 1 : 0), 0);
@@ -81,7 +84,9 @@ const searchItems = posts.map((post) => ({
         <article class="search-result-card">
           <div class="search-result-meta">
             <time>${formatDate(item.date)}</time>
-            ${item.series ? `<span>${escapeHtml(item.series)}</span>` : ''}
+            ${item.knowledgePath
+              ? `<span>${escapeHtml(item.knowledgePath)}</span>`
+              : item.series ? `<span>${escapeHtml(item.series)}</span>` : ''}
           </div>
           <h2><a href="${item.url}">${escapeHtml(item.title)}</a></h2>
           <p>${escapeHtml(item.description)}</p>

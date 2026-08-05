@@ -45,8 +45,11 @@ pnpm build
 3. 把指向未公开笔记的 Wiki Link 转成纯文本，不泄露正文。
 4. 只复制公开笔记实际引用的图片到 `public/obsidian-assets/`。
 5. 遇到重复 slug、缺失附件、非图片嵌入或高置信度密钥特征时立即失败。
+6. 从原始相对路径生成 `knowledgePath` 和 `knowledgeOrder`，让博客知识树保持与 Obsidian 一致。
 
 生成文件按 `slug` 写入 `src/content/posts/`，并带有自动生成标记，不要直接编辑。同步器只清理由它生成的文件，不会删除手写博客文章。
+
+博客的 `/knowledge/` 页面只展示包含公开文章的目录分支。文件夹和文件按照 Obsidian 数字前缀自然排序，未公开目录不会泄露。
 
 ## 私有快照排除项
 
