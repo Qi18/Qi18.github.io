@@ -1,13 +1,15 @@
 {
   "name": "rich-personal-blog",
   "type": "module",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "private": true,
   "scripts": {
     "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
-    "build": "ASTRO_TELEMETRY_DISABLED=1 astro check && ASTRO_TELEMETRY_DISABLED=1 astro build",
+    "build": "pnpm check:public && ASTRO_TELEMETRY_DISABLED=1 astro check && ASTRO_TELEMETRY_DISABLED=1 astro build",
     "preview": "ASTRO_TELEMETRY_DISABLED=1 astro preview",
-    "check": "ASTRO_TELEMETRY_DISABLED=1 astro check"
+    "check": "ASTRO_TELEMETRY_DISABLED=1 astro check",
+    "check:public": "node scripts/check-public-content.mjs",
+    "sync:obsidian": "node scripts/sync-obsidian.mjs"
   },
   "dependencies": {
     "@astrojs/mdx": "^7.0.5",

@@ -4,3 +4,4 @@ dist/
 qa/
 .DS_Store
 .env
+.obsidian-sync-tmp/

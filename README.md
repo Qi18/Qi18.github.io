@@ -2,6 +2,15 @@
 
 一个使用 Astro 构建的个人博客，内容以 Markdown / MDX 保存。
 
+## V4 功能
+
+- 完整 Obsidian Vault 保存到私有仓库 `Qi18/knowledge-vault-private`。
+- 博客只同步明确标记 `publish: true` 的文章，默认不公开。
+- 自动转换公开文章间的 Wiki Link，并只复制公开文章实际引用的图片。
+- 构建前执行公开内容敏感信息检查。
+
+详细规则见 [`docs/obsidian-publishing.md`](docs/obsidian-publishing.md)。
+
 ## V3 功能
 
 - 更完整的个人主页、当前关注和知识阅读地图。
@@ -42,6 +51,13 @@ series: "系列名称"
 draft: false
 featured: false
 ---
+```
+
+也可以在 Obsidian 笔记中加入 `publish: true`，然后执行：
+
+```bash
+OBSIDIAN_VAULT="/Users/rich/Documents/Obsidian Vault/knowledge" pnpm sync:obsidian
+pnpm build
 ```
 
 ## 内容配置
