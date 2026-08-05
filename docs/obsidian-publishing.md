@@ -46,7 +46,7 @@ pnpm build
 4. 只复制公开笔记实际引用的图片到 `public/obsidian-assets/`。
 5. 遇到重复 slug、缺失附件、非图片嵌入或高置信度密钥特征时立即失败。
 
-生成文件位于 `src/content/posts/obsidian/`，不要直接编辑。
+生成文件按 `slug` 写入 `src/content/posts/`，并带有自动生成标记，不要直接编辑。同步器只清理由它生成的文件，不会删除手写博客文章。
 
 ## 私有快照排除项
 

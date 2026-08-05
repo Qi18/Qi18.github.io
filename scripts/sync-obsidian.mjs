@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import {
+  cp,
   mkdir,
   mkdtemp,
   readdir,
@@ -17,7 +18,7 @@ const vaultRoot = path.resolve(
   process.env.OBSIDIAN_VAULT || '/Users/rich/Documents/Obsidian Vault/knowledge',
 );
 const postsDir = path.resolve(
-  process.env.OBSIDIAN_OUTPUT_DIR || path.join(blogRoot, 'src/content/posts/obsidian'),
+  process.env.OBSIDIAN_OUTPUT_DIR || path.join(blogRoot, 'src/content/posts'),
 );
 const assetsDir = path.resolve(
   process.env.OBSIDIAN_ASSET_DIR || path.join(blogRoot, 'public/obsidian-assets'),
@@ -133,7 +134,7 @@ function renderFrontmatter(data) {
   }
   lines.push(`draft: ${data.draft === true ? 'true' : 'false'}`);
   lines.push(`featured: ${data.featured === true ? 'true' : 'false'}`);
-  lines.push('---', '', '<!-- Generated from Obsidian. Do not edit directly. -->', '');
+  lines.push('---', '', '<!-- Generated from Obsidian. Do not edit directly. -->', '', '');
   return lines.join('\n');
 }
 
@@ -156,6 +157,44 @@ function sanitizeAssetName(name) {
 function isInside(root, candidate) {
   const relative = path.relative(root, candidate);
   return relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+}
+
+async function moveDirectory(source, target) {
+  try {
+    await rename(source, target);
+  } catch (error) {
+    if (error.code !== 'EXDEV') throw error;
+    await cp(source, target, { recursive: true });
+    await rm(source, { recursive: true, force: true });
+  }
+}
+
+async function replaceGeneratedPosts(source, target) {
+  await mkdir(target, { recursive: true });
+  const generatedEntries = (await readdir(source, { withFileTypes: true })).filter((entry) => entry.isFile());
+  for (const entry of generatedEntries) {
+    const existing = await readFile(path.join(target, entry.name), 'utf8').catch(() => null);
+    if (existing !== null && !existing.includes('<!-- Generated from Obsidian. Do not edit directly. -->')) {
+      throw new Error(`Public slug conflicts with a hand-written post: ${entry.name}`);
+    }
+  }
+
+  for (const entry of await readdir(target, { withFileTypes: true })) {
+    if (!entry.isFile() || !/\.(?:md|mdx)$/i.test(entry.name)) continue;
+    const file = path.join(target, entry.name);
+    const text = await readFile(file, 'utf8');
+    if (text.includes('<!-- Generated from Obsidian. Do not edit directly. -->')) {
+      await rm(file, { force: true });
+    }
+  }
+
+  await rm(path.join(target, 'obsidian'), { recursive: true, force: true });
+  for (const entry of generatedEntries) {
+    const from = path.join(source, entry.name);
+    const to = path.join(target, entry.name);
+    await cp(from, to);
+  }
+  await rm(source, { recursive: true, force: true });
 }
 
 async function main() {
@@ -254,16 +293,14 @@ async function main() {
       return target ? `[${display}](/posts/${target.data.slug}/)` : display;
     });
 
-    const generated = `${renderFrontmatter(note.data)}${body.replace(/^#\s+[^\n]+\n+/, '')}`;
+    const generated = `${renderFrontmatter(note.data)}${body.replace(/^\n*#\s+[^\n]+\n+/, '')}`;
     await writeFile(path.join(tempPosts, `${note.data.slug}.md`), generated, 'utf8');
   }
 
-  await rm(postsDir, { recursive: true, force: true });
   await rm(assetsDir, { recursive: true, force: true });
-  await mkdir(path.dirname(postsDir), { recursive: true });
   await mkdir(path.dirname(assetsDir), { recursive: true });
-  await rename(tempPosts, postsDir);
-  await rename(tempAssets, assetsDir);
+  await replaceGeneratedPosts(tempPosts, postsDir);
+  await moveDirectory(tempAssets, assetsDir);
   await rm(tempRoot, { recursive: true, force: true });
 
   console.log(`Obsidian sync complete: ${notes.length} public note(s).`);
