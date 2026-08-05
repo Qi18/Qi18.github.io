@@ -9,28 +9,69 @@ import { siteConfig } from '../site.config';
       <p class="eyebrow"><span></span> ABOUT ME</p>
       <h1>你好，<br />我是 Rich。</h1>
       <p>一名喜欢把复杂系统拆开看明白，再把它们重新组装起来的工程师。</p>
+      <div class="about-roles" aria-label="个人角色">
+        <span>ENGINEER</span>
+        <span>BUILDER</span>
+        <span>LEARNER</span>
+      </div>
+      <aside class="about-now">
+        <p>NOW · AUG 2026</p>
+        <strong>从模型原理走到源码，再走进真实训练实验。</strong>
+        <a href="/series/NanoChat%20%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">查看当前学习系列 →</a>
+      </aside>
     </div>
     <div class="about-body">
       <div class="about-block">
         <span class="about-index">01 /</span>
         <div>
-          <h2>我在做什么</h2>
+          <h2>我在关注什么</h2>
           <p>我关注大语言模型、训练与推理系统，也持续参与真实工程问题的定位和交付。这个博客连接了两件事：理解原理，以及解决问题。</p>
+          <div class="focus-grid">
+            <a href="/series/NanoChat%20%E6%BA%90%E7%A0%81%E5%AD%A6%E4%B9%A0/">
+              <span>01</span><strong>模型与训练</strong><small>NanoChat · RLHF · 源码阅读</small>
+            </a>
+            <a href="/series/LLM%20%E5%BA%94%E7%94%A8%E5%AE%9E%E8%B7%B5/">
+              <span>02</span><strong>LLM 应用</strong><small>RAG · 评估 · 工程落地</small>
+            </a>
+            <a href="/tags/%E5%B7%A5%E7%A8%8B%E5%AE%9E%E8%B7%B5/">
+              <span>03</span><strong>复杂系统</strong><small>诊断 · 验证 · 可复用方案</small>
+            </a>
+          </div>
         </div>
       </div>
       <div class="about-block">
         <span class="about-index">02 /</span>
         <div>
-          <h2>为什么写博客</h2>
-          <p>写作是检验理解最直接的方式。我希望这里留下的不只是结论，还有问题是如何被拆解、方案如何被验证。</p>
+          <h2>我怎样工作</h2>
+          <p>写作是检验理解最直接的方式。我希望这里留下的不只是结论，还有问题如何被拆解、方案如何被验证。</p>
+          <ol class="principle-list">
+            <li><span>01</span><div><strong>从真实入口开始</strong><p>先找到实际执行链路、运行状态和第一手证据。</p></div></li>
+            <li><span>02</span><div><strong>把复杂问题分层</strong><p>分清现象、机制、边界和验证方法，再做判断。</p></div></li>
+            <li><span>03</span><div><strong>让结果可以复用</strong><p>把一次解决过程沉淀成文章、清单或工具。</p></div></li>
+          </ol>
         </div>
       </div>
       <div class="about-block">
         <span class="about-index">03 /</span>
         <div>
+          <h2>从哪里开始</h2>
+          <p>可以按时间浏览文章，也可以沿着系列和主题建立自己的阅读路径。</p>
+          <div class="about-links">
+            <a href="/posts"><span>全部文章</span><i>按时间阅读 →</i></a>
+            <a href="/series"><span>专题系列</span><i>按问题深入 →</i></a>
+            <a href="/search"><span>全文搜索</span><i>直接找答案 →</i></a>
+          </div>
+        </div>
+      </div>
+      <div class="about-block">
+        <span class="about-index">04 /</span>
+        <div>
           <h2>保持联系</h2>
-          <p>如果你也在研究 LLM 或构建复杂系统，欢迎交流。</p>
-          <a class="button primary" href={siteConfig.github}>访问 GitHub</a>
+          <p>如果你也在研究 LLM、阅读源码或构建复杂系统，欢迎交流。博客每次重要升级也会记录在更新日志里。</p>
+          <div class="about-actions">
+            <a class="button primary" href={siteConfig.github}>访问 GitHub</a>
+            <a class="button secondary" href="/changelog">查看更新日志</a>
+          </div>
         </div>
       </div>
     </div>

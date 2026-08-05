@@ -85,6 +85,17 @@ const updatedDate = post.data.updatedAt ? formatDate(post.data.updatedAt) : unde
       )}
     </div>
 
+    <div class="article-actions" aria-label="文章操作">
+      <div>
+        <p>SHARE / 收藏这篇文章</p>
+        <span>把链接留给以后，或分享给也在研究这个问题的人。</span>
+      </div>
+      <div class="article-action-buttons">
+        <button class="article-action share-article" type="button">分享文章</button>
+        <button class="article-action copy-article-link" type="button">复制链接</button>
+      </div>
+    </div>
+
     {(olderPost || newerPost) && (
       <nav class="post-navigation" aria-label="文章翻页">
         {olderPost ? (
@@ -103,6 +114,18 @@ const updatedDate = post.data.updatedAt ? formatDate(post.data.updatedAt) : unde
     )}
   </article>
 
+  <button class="back-to-top" type="button" aria-label="返回顶部" title="返回顶部">↑</button>
+  <div class="copy-fallback" hidden role="dialog" aria-modal="true" aria-labelledby="copy-fallback-title">
+    <div class="copy-fallback-card">
+      <div>
+        <p id="copy-fallback-title">浏览器未允许自动复制</p>
+        <span>内容已选中，请按 ⌘C 或 Ctrl+C。</span>
+      </div>
+      <textarea readonly aria-label="待复制内容"></textarea>
+      <button type="button">关闭</button>
+    </div>
+  </div>
+
   <script>
     const progressBar = document.querySelector<HTMLElement>('.reading-progress span');
     const article = document.querySelector<HTMLElement>('.post');
@@ -119,6 +142,23 @@ const updatedDate = post.data.updatedAt ? formatDate(post.data.updatedAt) : unde
     window.addEventListener('scroll', updateReadingProgress, { passive: true });
     window.addEventListener('resize', updateReadingProgress);
 
+    const copyText = async (value: string) => {
+      try {
+        await navigator.clipboard.writeText(value);
+        return true;
+      } catch {
+        const fallback = document.querySelector<HTMLElement>('.copy-fallback');
+        const textarea = fallback?.querySelector<HTMLTextAreaElement>('textarea');
+        if (fallback && textarea) {
+          textarea.value = value;
+          fallback.hidden = false;
+          textarea.focus();
+          textarea.select();
+        }
+        return false;
+      }
+    };
+
     document.querySelectorAll<HTMLElement>('.prose pre').forEach((block) => {
       const button = document.createElement('button');
       button.type = 'button';
@@ -127,15 +167,51 @@ const updatedDate = post.data.updatedAt ? formatDate(post.data.updatedAt) : unde
       button.setAttribute('aria-label', '复制代码');
       button.addEventListener('click', async () => {
         const code = block.querySelector('code')?.textContent ?? block.textContent ?? '';
-        try {
-          await navigator.clipboard.writeText(code);
-          button.textContent = '已复制';
-        } catch {
-          button.textContent = '复制失败';
-        }
-        window.setTimeout(() => { button.textContent = '复制'; }, 1600);
+        button.textContent = await copyText(code) ? '已复制' : '请手动复制';
+        window.setTimeout(() => { button.textContent = '复制'; }, 4000);
       });
       block.append(button);
+    });
+
+    const setTemporaryLabel = (button: HTMLButtonElement | null, label: string) => {
+      if (!button) return;
+      const original = button.textContent ?? '';
+      button.textContent = label;
+      window.setTimeout(() => { button.textContent = original; }, 4000);
+    };
+
+    const copyArticleUrl = async (button: HTMLButtonElement | null) => {
+      setTemporaryLabel(button, await copyText(window.location.href) ? '链接已复制' : '请手动复制');
+    };
+
+    const shareButton = document.querySelector<HTMLButtonElement>('.share-article');
+    const copyLinkButton = document.querySelector<HTMLButtonElement>('.copy-article-link');
+    shareButton?.addEventListener('click', async () => {
+      if (navigator.share) {
+        try {
+          await navigator.share({ title: document.title, text: document.querySelector<HTMLMetaElement>('meta[name="description"]')?.content, url: window.location.href });
+          return;
+        } catch (error) {
+          if (error instanceof DOMException && error.name === 'AbortError') return;
+        }
+      }
+      await copyArticleUrl(shareButton);
+    });
+    copyLinkButton?.addEventListener('click', () => copyArticleUrl(copyLinkButton));
+
+    const backToTop = document.querySelector<HTMLButtonElement>('.back-to-top');
+    const updateBackToTop = () => backToTop?.classList.toggle('visible', window.scrollY > 560);
+    updateBackToTop();
+    window.addEventListener('scroll', updateBackToTop, { passive: true });
+    backToTop?.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+
+    const copyFallback = document.querySelector<HTMLElement>('.copy-fallback');
+    const closeCopyFallback = copyFallback?.querySelector<HTMLButtonElement>('button');
+    closeCopyFallback?.addEventListener('click', () => {
+      if (copyFallback) copyFallback.hidden = true;
+    });
+    copyFallback?.addEventListener('click', (event) => {
+      if (event.target === copyFallback) copyFallback.hidden = true;
     });
   </script>
 </BaseLayout>

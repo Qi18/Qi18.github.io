@@ -1,0 +1,53 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+
+const releases = [
+  {
+    version: 'V3',
+    date: '2026 / 08 / 05',
+    title: '让博客更像一个人',
+    description: '补全个人主页和知识地图，让读者知道我在关注什么、怎样工作，以及从哪里开始阅读。',
+    items: ['个人主页与当前学习方向', '项目和知识阅读地图', '文章分享、复制链接与返回顶部', '独立的站点更新记录'],
+    current: true,
+  },
+  {
+    version: 'V2',
+    date: '2026 / 08 / 05',
+    title: '从文章列表走向阅读系统',
+    description: '把零散文章组织成可以持续深入的系列，并补齐搜索和长文阅读体验。',
+    items: ['系列与顺序阅读', '静态全文搜索', '阅读进度、目录与阅读时长', '代码复制和上下篇导航'],
+  },
+  {
+    version: 'V1',
+    date: '2026 / 08 / 04',
+    title: '第一版正式上线',
+    description: '建立个人博客的内容、视觉和自动发布基础。',
+    items: ['Astro 静态博客', 'Markdown 内容系统', '深浅色主题', 'GitHub Pages 自动部署'],
+  },
+];
+---
+
+<BaseLayout title="更新日志" description="Rich's Notebook 的产品与内容迭代记录。">
+  <header class="page-header shell changelog-header">
+    <p class="eyebrow"><span></span> CHANGELOG</p>
+    <h1>持续迭代，<br />也记录为什么改变。</h1>
+    <p>这里不仅列功能，也保留每一版想解决的问题。</p>
+  </header>
+
+  <section class="changelog shell" aria-label="博客版本记录">
+    {releases.map((release) => (
+      <article class:list={['release', { current: release.current }]}>
+        <div class="release-meta">
+          <strong>{release.version}</strong>
+          <time>{release.date}</time>
+          {release.current && <span>NOW</span>}
+        </div>
+        <div class="release-content">
+          <h2>{release.title}</h2>
+          <p>{release.description}</p>
+          <ul>{release.items.map((item) => <li>{item}</li>)}</ul>
+        </div>
+      </article>
+    ))}
+  </section>
+</BaseLayout>

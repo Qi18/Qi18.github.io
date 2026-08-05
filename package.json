@@ -1,7 +1,7 @@
 {
   "name": "rich-personal-blog",
   "type": "module",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "scripts": {
     "dev": "ASTRO_TELEMETRY_DISABLED=1 astro dev",
