@@ -3,8 +3,7 @@ export const siteConfig = {
   shortTitle: 'RN',
   description: '记录 LLM、工程实践与持续学习。',
   author: 'Rich',
-  email: 'hello@example.com',
-  github: 'https://github.com/',
+  github: 'https://github.com/Qi18/',
   nav: [
     { href: '/', label: '首页' },
     { href: '/posts', label: '文章' },
