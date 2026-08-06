@@ -128,11 +128,6 @@ function renderFrontmatter(data) {
   const tags = Array.isArray(data.tags) ? data.tags : data.tags ? [data.tags] : [];
   lines.push('tags:');
   for (const tag of tags) lines.push(`  - ${yamlString(tag)}`);
-  if (Array.isArray(data.knowledgePath) && data.knowledgePath.length) {
-    lines.push('knowledgePath:');
-    for (const segment of data.knowledgePath) lines.push(`  - ${yamlString(segment)}`);
-  }
-  if (data.knowledgeOrder) lines.push(`knowledgeOrder: ${yamlString(data.knowledgeOrder)}`);
   if (data.series) lines.push(`series: ${yamlString(data.series)}`);
   if (data.seriesOrder !== undefined && data.seriesOrder !== '') {
     lines.push(`seriesOrder: ${Number(data.seriesOrder)}`);
@@ -213,9 +208,6 @@ async function main() {
     const relative = path.relative(vaultRoot, file);
     const { data, body } = parseFrontmatter(source, relative);
     if (data.publish !== true) continue;
-    const directory = path.dirname(relative);
-    data.knowledgePath = directory === '.' ? [] : directory.split(path.sep);
-    data.knowledgeOrder = relative.replace(/\.md$/i, '').split(path.sep).join('/');
     const note = { file, relative, source, data, body };
     ensureSafePublicNote(note);
     notes.push(note);

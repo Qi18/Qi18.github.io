@@ -3,12 +3,19 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 
 const releases = [
   {
+    version: 'V6',
+    date: '2026 / 08 / 06',
+    title: '用一条主线组织内容',
+    description: '减少知识库、系列和文章列表之间的重复选择，让读者只需要从系列进入。',
+    items: ['系列成为唯一主入口', '移除知识树与路径面包屑', '收敛主导航', '保留搜索、标签与文章阅读能力'],
+    current: true,
+  },
+  {
     version: 'V5',
     date: '2026 / 08 / 05',
     title: '让博客沿着知识库生长',
     description: '不再用扁平文章列表代替知识结构，让公开笔记继承 Obsidian 的目录、编号与上下文。',
     items: ['公开知识目录树', 'Obsidian 路径与数字顺序', '文章知识库面包屑', '目录关键词搜索与独立文章分区'],
-    current: true,
   },
   {
     version: 'V4',

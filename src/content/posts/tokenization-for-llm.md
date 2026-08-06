@@ -6,12 +6,6 @@ tags:
   - "LLM"
   - "Tokenizer"
   - "NLP"
-knowledgePath:
-  - "CS"
-  - "ML"
-  - "大模型"
-  - "01-基础"
-knowledgeOrder: "CS/ML/大模型/01-基础/1.1.1-分词 Tokenization"
 series: "LLM 基础"
 seriesOrder: 1
 draft: false

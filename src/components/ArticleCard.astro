@@ -7,7 +7,6 @@ interface Props {
       description: string;
       publishedAt: Date;
       tags: string[];
-      knowledgePath?: string[];
       series?: string;
     };
   };
@@ -20,13 +19,12 @@ const date = post.data.publishedAt.toLocaleDateString('zh-CN', {
   month: '2-digit',
   day: '2-digit',
 });
-const context = post.data.knowledgePath?.at(-1) ?? post.data.series;
 ---
 
 <article class:list={['article-card', { featured }]}>
   <div class="article-card-topline">
     <time datetime={post.data.publishedAt.toISOString()}>{date}</time>
-    {context && <span>{context}</span>}
+    {post.data.series && <span>{post.data.series}</span>}
   </div>
   <h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3>
   <p>{post.data.description}</p>

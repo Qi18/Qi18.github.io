@@ -1,7 +1,6 @@
 ---
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getKnowledgeAnchor } from '../../lib/knowledge';
 import { getReadingMinutes, sortPostsByDate } from '../../lib/posts';
 
 export async function getStaticPaths() {
@@ -39,18 +38,7 @@ const updatedDate = post.data.updatedAt ? formatDate(post.data.updatedAt) : unde
   <div class="reading-progress" aria-hidden="true"><span></span></div>
   <article class="post shell">
     <header class="post-header">
-      <a class="back-link" href="/posts">← 返回文章</a>
-      {post.data.knowledgePath?.length && (
-        <nav class="post-breadcrumb" aria-label="知识库路径">
-          <a href="/knowledge/">知识库</a>
-          {post.data.knowledgePath.map((segment, index) => (
-            <>
-              <span>/</span>
-              <a href={`/knowledge/#${getKnowledgeAnchor(post.data.knowledgePath!.slice(0, index + 1))}`}>{segment}</a>
-            </>
-          ))}
-        </nav>
-      )}
+      <a class="back-link" href="/series">← 返回系列</a>
       {post.data.series && (
         <p class="post-series">
           <a href={`/series/${encodeURIComponent(post.data.series)}/`}>

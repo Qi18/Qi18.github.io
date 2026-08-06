@@ -6,12 +6,6 @@ tags:
   - "LLM"
   - "评测"
   - "Benchmark"
-knowledgePath:
-  - "CS"
-  - "ML"
-  - "大模型"
-  - "08-评测"
-knowledgeOrder: "CS/ML/大模型/08-评测/8.1-LLM评测基本概念"
 series: "LLM 工程"
 seriesOrder: 1
 draft: false
