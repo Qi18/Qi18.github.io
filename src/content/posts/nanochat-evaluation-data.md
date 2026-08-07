@@ -7,13 +7,13 @@ tags:
   - NanoChat
   - LLM
   - 评测
-series: "实验过程"
+series: "源码阅读"
 seriesPath:
   - "LLM"
   - "实验"
   - "Nanochat"
-  - "实验过程"
-seriesOrder: 1
+  - "源码阅读"
+seriesOrder: 2
 draft: false
 featured: true
 ---

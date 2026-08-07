@@ -1,4 +1,5 @@
 import type { CollectionEntry } from 'astro:content';
+import { seriesDefinitions } from '../data/series';
 
 export type PostEntry = CollectionEntry<'posts'>;
 
@@ -40,20 +41,32 @@ export function isSeriesPathPrefix(prefix: string[], path: string[]) {
 export function buildSeriesTree(posts: PostEntry[]): SeriesTreeNode[] {
   const roots: SeriesTreeNode[] = [];
 
-  for (const post of posts) {
-    const path = getSeriesPath(post);
-    if (!path.length) continue;
-
+  const ensurePath = (path: string[]) => {
     let siblings = roots;
+    const nodes: SeriesTreeNode[] = [];
+
     path.forEach((name, index) => {
       let node = siblings.find((candidate) => candidate.name === name);
       if (!node) {
         node = { name, path: path.slice(0, index + 1), posts: [], directPosts: [], children: [] };
         siblings.push(node);
       }
+      nodes.push(node);
+      siblings = node.children;
+    });
+
+    return nodes;
+  };
+
+  for (const definition of seriesDefinitions) ensurePath(definition.path);
+
+  for (const post of posts) {
+    const path = getSeriesPath(post);
+    if (!path.length) continue;
+
+    ensurePath(path).forEach((node, index) => {
       node.posts.push(post);
       if (index === path.length - 1) node.directPosts.push(post);
-      siblings = node.children;
     });
   }
 

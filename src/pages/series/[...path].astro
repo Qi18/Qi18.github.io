@@ -2,6 +2,7 @@
 import { getCollection, type CollectionEntry } from 'astro:content';
 import ArticleCard from '../../components/ArticleCard.astro';
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getSeriesDefinition } from '../../data/series';
 import {
   buildSeriesTree,
   flattenSeriesTree,
@@ -40,6 +41,7 @@ export async function getStaticPaths() {
     { from: ['LLM', '项目实战', 'NanoChat 源码学习'], to: ['LLM', '实验', 'Nanochat'] },
     { from: ['LLM', '项目实战', 'LLM 应用实践'], to: ['LLM', '实验', 'LLM 应用实践'] },
     { from: ['NanoChat 源码学习'], to: ['LLM', '实验', 'Nanochat'] },
+    { from: ['实验过程'], to: ['LLM', '实验', 'Nanochat', '实验过程'] },
   ];
 
   for (const alias of legacyPathAliases) {
@@ -79,9 +81,11 @@ export async function getStaticPaths() {
 const { path, posts, directPosts, children, legacy = false } = Astro.props;
 const title = path.at(-1)!;
 const breadcrumbs = path.map((name, index) => ({ name, path: path.slice(0, index + 1) }));
+const seriesDefinition = getSeriesDefinition(path);
+const overview = seriesDefinition?.overview;
 ---
 
-<BaseLayout title={title} description={`“${path.join(' / ')}”目录下的全部文章。`}>
+<BaseLayout title={title} description={overview?.description ?? `“${path.join(' / ')}”目录下的全部文章。`}>
   <header class="page-header shell compact">
     <nav class="series-breadcrumbs" aria-label="系列路径">
       <a href="/series">系列</a>
@@ -96,6 +100,25 @@ const breadcrumbs = path.map((name, index) => ({ name, path: path.slice(0, index
   </header>
 
   <section class="shell page-content">
+    {overview && (
+      <aside class="series-overview">
+        <div>
+          <p class="section-kicker">PROJECT</p>
+          <h2>{overview.title}</h2>
+          <p>{overview.description}</p>
+        </div>
+        <div class="series-overview-links">
+          {overview.links.map((link) => (
+            <a href={link.href} target="_blank" rel="noreferrer">
+              <span>{link.label}</span>
+              <strong>{new URL(link.href).host}{new URL(link.href).pathname}</strong>
+              <i>↗</i>
+            </a>
+          ))}
+        </div>
+      </aside>
+    )}
+
     {children.length > 0 && (
       <div class="series-folder-grid">
         {children.map((child) => (
@@ -122,6 +145,13 @@ const breadcrumbs = path.map((name, index) => ({ name, path: path.slice(0, index
           {posts.map((post) => <ArticleCard post={post} />)}
         </div>
       </>
+    )}
+
+    {children.length === 0 && directPosts.length === 0 && (
+      <div class="series-empty-state">
+        <p>这个目录暂时还没有文章。</p>
+        <span>后续实验记录会整理到这里。</span>
+      </div>
     )}
   </section>
 </BaseLayout>
