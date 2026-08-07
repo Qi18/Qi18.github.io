@@ -1,119 +1,265 @@
 ---
-title: "NanoChat 评测数据：Base、SFT 与 GSM8K RL 对比"
-description: "记录 1.384B NanoChat 在 8×L20 上从预训练、SFT 到 GSM8K 强化学习的真实评测结果，并说明 BPB、CORE、ChatCORE 等指标分别衡量什么。"
+title: "NanoChat 评测指标说明"
+description: "从 Tokenizer、Base Model、Chat Model 到 GSM8K RL，解释 NanoChat 每个评测指标衡量什么、如何计算、应该怎么看。"
 publishedAt: 2026-08-07
+updatedAt: 2026-08-07
 tags:
   - NanoChat
   - LLM
   - 评测
-  - 强化学习
 series: "NanoChat 源码学习"
 seriesOrder: 2
 draft: false
 featured: true
 ---
 
-这篇文章记录一次 NanoChat d24 完整训练的评测数据。实验依次完成 Base Model 预训练、SFT、GSM8K 强化学习和全量任务评测。和只看训练 loss 相比，把多类指标放在一起，才能判断模型究竟提升了什么，又牺牲了什么。
+NanoChat 不只有一个“模型分数”。Tokenizer、Base Model、Chat Model 和 RL 使用的评测对象不同，输出的指标也回答不同问题。理解这些指标，关键不是背数值，而是先确认：**它在测什么、如何判分、基线是什么，以及数值能不能跨配置比较。**
 
 上一篇：[读懂 NanoChat：先找到真实的训练主线](/posts/nanochat-source-reading/)
 
-## 实验配置
+## 指标总览
 
-| 项目 | 配置 |
-| --- | --- |
-| GPU | 8×NVIDIA L20，每卡约 46 GiB |
-| 并行方式 | 8 卡 DDP |
-| 计算精度 | BF16 |
-| 模型 | d24，24 层，隐藏维度 1536，12 个 Attention Head |
-| 参数量 | 1,384,122,122（约 1.384B） |
-| 上下文长度 | 2048 |
-| 词表大小 | 32,768 |
-| 训练数据 | ClimbMix 171 个 shard，约 15 GB |
+| 阶段 | 指标 | 主要回答的问题 | 方向 |
+| --- | --- | --- | --- |
+| Tokenizer | Compression Ratio | 一个 Token 平均覆盖多少原始字节 | 越高越好 |
+| Base Model | Train / Validation BPB | 模型预测文本的能力如何 | 越低越好 |
+| Base Model | Accuracy / Centered Score | 单项 ICL 任务表现如何 | 越高越好 |
+| Base Model | CORE | Base Model 的综合 ICL 能力如何 | 越高越好 |
+| Chat Model | ARC / MMLU Accuracy | 知识和选择题能力如何 | 越高越好 |
+| Chat Model | GSM8K Accuracy | 数学推理最终答案是否正确 | 越高越好 |
+| Chat Model | HumanEval Accuracy | 生成代码能否通过测试 | 越高越好 |
+| Chat Model | SpellingBee Accuracy | 字母拼写和计数是否正确 | 越高越好 |
+| Chat Model | ChatCORE | Chat Model 的综合任务能力如何 | 越高越好 |
+| GSM8K RL | Average Reward | 当前 rollout 中答对了多少 | 越高越好 |
+| GSM8K RL | Pass@k | 生成 k 次时至少答对一次的概率 | 越高越好 |
 
-## NanoChat 中需要一起看的指标
+## Tokenizer 评测
 
-| 指标 | 回答的问题 | 判断方向 |
-| --- | --- | --- |
-| Raw loss | 当前训练目标是否继续下降 | 越低越好 |
-| BPB | 模型预测验证文本的能力 | 越低越好 |
-| CORE | Base Model 的知识、推理和上下文学习能力 | 越高越好 |
-| ChatCORE | SFT/RL 模型在问答、数学和代码等任务上的综合表现 | 越高越好 |
-| 任务 Accuracy | 某项具体能力是否提升 | 越高越好 |
-| Reward、Pass@k | RL rollout 获得正确答案的比例 | 越高越好 |
-| token/s、MFU | 训练系统的吞吐和硬件利用率 | 用于工程诊断 |
+### Vocabulary Size
 
-BPB 是 **bits per byte（每字节比特数）**，计算方式为：
+Vocabulary Size 是 Tokenizer 中可使用的 Token 总数。词表更大通常能把常见片段合并成更长的 Token，但会增加 embedding 和输出层的参数量。
+
+它不是“越大越好”的分数。比较 Tokenizer 时，需要同时考虑压缩率、模型参数开销、多语言表现和实际训练数据分布。
+
+### Compression Ratio
+
+NanoChat 的 `tok_eval.py` 用下面的方式衡量 Tokenizer 压缩率：
 
 ```text
-bpb = 所有 Token 的负对数似然 / (文本的 UTF-8 字节数 × ln 2)
+compression ratio = UTF-8 字节数 / Token 数
 ```
 
-分子来自模型对目标 Token 的预测概率。除以 `ln 2`，是把自然对数计算的损失从 `nat` 转换成 `bit`；再除以 UTF-8 字节数，则把不同长度文本归一化到“每个字节平均需要多少 bit”。因此 `0.80 bpb` 优于 `0.90 bpb`。
+它表示一个 Token 平均覆盖多少原始字节，因此数值越高，说明同一段文本需要的 Token 越少。例如相同文本有 1,000 bytes：
 
-BPB 比每 Token Loss 更少受到 Tokenizer 切分粒度影响，但它只衡量语言建模能力，不代表问答、数学或代码任务一定更强，所以还需要结合 CORE、ChatCORE 和具体任务 Accuracy。
+- 编码成 500 Tokens，压缩率为 `2.0 bytes/token`；
+- 编码成 400 Tokens，压缩率为 `2.5 bytes/token`，压缩效果更好。
 
-## Base Model 结果
+NanoChat 会分别在新闻、韩文、代码、数学、科学文本和训练/验证语料上比较自己的 Tokenizer 与 GPT-2、GPT-4 Tokenizer。不能只看一种英文文本，因为不同语言和代码的 UTF-8 分布差异很大。
 
-| 指标 | 结果 |
-| --- | ---: |
-| 训练步数 | 5,568 |
-| 总训练时间 | 749.71 分钟（约 12 小时 30 分） |
-| 最终 raw loss | 2.323202 |
-| 末段吞吐 | 约 129,511 token/s |
-| Train BPB | 0.715094 |
-| Validation BPB | 0.713085 |
-| CORE metric | 0.2541 |
+### Relative Diff
 
-这里不能直接比较 `raw loss = 2.323202` 和 `Validation BPB = 0.713085`：前者通常按 Token 统计交叉熵，后者按原始文本字节数归一化，统计口径不同。
+相对差异按 Token 数计算：
 
-## SFT 结果
+```text
+relative diff = (基线 Token 数 - 当前 Token 数) / 基线 Token 数
+```
 
-SFT 从 Base checkpoint 继续训练，训练混合数据共 789,759 行，并对 MMLU 和 GSM8K 数据加权。
+结果为正，表示当前 Tokenizer 使用的 Token 更少；结果为负，表示比基线需要更多 Token。比较时必须使用完全相同的原始文本。
 
-| 指标 | 结果 |
-| --- | ---: |
-| 训练步数 | 466 |
-| 总训练时间 | 60.97 分钟 |
-| 最低 Validation BPB | 0.2727 |
-| 训练期最终 ChatCORE | 0.2386 |
-| ChatCORE categorical | 0.3421 |
+## Base Model 评测
 
-SFT 的 BPB 和 Base Model BPB 来自不同的数据分布与训练目标，不能用 `0.2727 < 0.713085` 直接推出 SFT 让所有通用能力都大幅提升。判断聊天模型仍然要看后面的全量任务评测。
+`base_eval.py` 默认包含三部分：BPB、CORE 和文本采样。BPB 衡量语言建模质量，CORE 衡量任务能力，采样用于人工观察生成质量。
 
-## GSM8K RL 训练结果
+### Train BPB 与 Validation BPB
 
-强化学习从 SFT checkpoint 开始，只针对 GSM8K 数学任务训练，共完成 467 步。
+BPB 是 **bits per byte（每字节比特数）**：
 
-| 指标 | 结果 |
-| --- | ---: |
-| 最终 step 平均 reward | 0.4141 |
-| 最终平均序列长度 | 139.96 |
-| step 240 Pass@1 | 16.75% |
-| step 240 Pass@8 | 34.00% |
-| step 420 Pass@1 | 16.50% |
-| step 420 Pass@8 | 32.50% |
+```text
+bpb = 有效目标 Token 的负对数似然总和 / (有效目标的 UTF-8 字节数 × ln 2)
+```
 
-Pass@1 表示只生成一次时答对的比例；Pass@8 表示生成 8 个候选答案时，至少有一个正确答案的比例。两者差距较大，说明模型已经能偶尔找到正确推理路径，但单次生成还不稳定。
+其中：
 
-## SFT 与 RL 全量评测
+- 特殊 Token，例如 `<|bos|>`，不计入；
+- 被 `ignore_index` mask 的目标不计入；
+- 除以 `ln 2`，将自然对数单位 `nat` 转换成 `bit`；
+- 按字节归一化，降低不同词表和 Tokenizer 切分粒度带来的影响。
 
-| 指标 | SFT | RL | RL - SFT |
-| --- | ---: | ---: | ---: |
-| ARC-Easy | 64.27% | 64.27% | 0.00 pp |
-| ARC-Challenge | 50.94% | 50.68% | -0.26 pp |
-| MMLU | 37.07% | 36.62% | -0.45 pp |
-| GSM8K | 1.90% | **18.65%** | **+16.75 pp** |
-| HumanEval | 12.80% | 6.71% | **-6.09 pp** |
-| ChatCORE | 0.2355 | **0.2549** | **+0.0194（约 +8.2%）** |
+BPB 越低越好。`Train BPB` 衡量训练分布上的拟合程度；`Validation BPB` 使用未参与训练的验证文本，更能反映泛化能力。通常优先关注 Validation BPB，同时观察 Train 与 Validation 的差距是否持续扩大。
 
-最明显的变化是 GSM8K 从 `1.90%` 提升到 `18.65%`，证明数学专项 RL 有效；但 HumanEval 从 `12.80%` 降到 `6.71%`，MMLU 和 ARC-Challenge 也略有下降。这说明总体 ChatCORE 上升并不代表所有能力都上升：模型在获得数学专项能力的同时，出现了能力迁移和遗忘。
+BPB 不是问答正确率。BPB 下降说明模型更善于预测文本，但不保证数学、知识问答或代码能力同步提升。
 
-## 如何解读这组数据
+### Accuracy
 
-1. **BPB 用于持续观察语言建模质量**，适合比较预训练 checkpoint，但不能代替下游任务评测。
-2. **CORE 更适合 Base Model**，用于观察预训练是否形成知识、推理和上下文学习能力。
-3. **ChatCORE 是综合分**，必须展开到 ARC、MMLU、GSM8K、HumanEval 才能发现能力增减发生在哪里。
-4. **单任务 RL 会改变能力分布**。本次 RL checkpoint 更适合作为数学专项模型，不能直接视为更强的通用聊天模型。
-5. **一次回答正确不等于能力稳定**。最终 CLI 冒烟测试中，模型虽然能解释天空为什么是蓝色，也能生成正确的阶乘代码，却把 `37×48` 错答为 `192`；这与 GSM8K 只有 `18.65%` 的结果一致。
+CORE 中每个子任务首先计算 Accuracy：
 
-结论不是“RL 后模型整体更强”，而是：**数学任务显著改善，综合分有所上升，但代码和部分通用能力发生回退。** 评测的价值正是在一个总分之外，把这种变化拆出来。
+```text
+accuracy = 答对样本数 / 总样本数
+```
+
+但不同任务的随机猜测基线不同。例如四选一任务随机猜测约为 25%，二选一约为 50%。直接平均原始 Accuracy，会让不同任务无法公平汇总。
+
+### Centered Score
+
+NanoChat 会先扣除任务的随机基线，再归一化：
+
+```text
+centered score = (accuracy - random baseline) / (1 - random baseline)
+```
+
+这样：
+
+- `0` 表示与随机猜测相当；
+- `1` 表示全部答对；
+- 小于 `0` 表示低于随机基线。
+
+Centered Score 的作用是让不同选择数量、不同随机基线的任务可以放在一起平均。
+
+### CORE
+
+CORE 来自 DCLM 的 Base Model 评测协议，覆盖常识、阅读理解、知识问答、符号操作和上下文学习等多类任务。NanoChat 的 CORE 为所有子任务 Centered Score 的平均值：
+
+```text
+CORE = 所有 CORE 子任务 centered score 的平均值
+```
+
+CORE 越高，说明 Base Model 的综合 ICL（In-Context Learning）能力越强。比较 CORE 时必须保持评测任务版本、few-shot 设置和 `max_per_task` 一致；只抽少量样本得到的是快速近似值，波动会明显大于全量评测。
+
+### Sample
+
+`base_eval.py` 还会输出有提示和无条件生成样本。Sample 不是自动化数值指标，主要用于人工检查：
+
+- 文本是否连贯；
+- 是否出现严重重复；
+- 是否能遵循简单提示；
+- 是否存在明显格式异常。
+
+它直观但主观，不能代替 BPB 和 CORE。
+
+## Chat Model 评测
+
+`chat_eval.py` 同时支持选择题评测和生成式评测。默认任务包括 ARC-Easy、ARC-Challenge、MMLU、GSM8K、HumanEval 和 SpellingBee。
+
+### ARC-Easy 与 ARC-Challenge
+
+ARC 是科学问答选择题：
+
+- `ARC-Easy` 题目相对基础；
+- `ARC-Challenge` 包含更难、通常不能仅靠简单词面匹配回答的问题。
+
+NanoChat 不让模型自由生成整段回答，而是在答案位置只比较可选字母的 logits，选择概率最高的字母。指标是 Accuracy，四选一随机基线按 25% 计算。
+
+### MMLU
+
+MMLU 是覆盖数学、物理、计算机、医学、法律、人文社科等 57 个学科的四选一知识测试。NanoChat 同样比较答案字母的 logits，并计算 Accuracy。
+
+MMLU 主要反映知识覆盖和部分推理能力，但分数会受到训练数据污染、学科分布以及提示格式影响。四选一随机基线为 25%。
+
+### GSM8K
+
+GSM8K 是小学数学文字题。NanoChat 让模型生成完整解题过程，再从 `####` 后提取最终数字，与标准答案比较。
+
+```text
+GSM8K accuracy = 最终数字正确的题数 / 总题数
+```
+
+它只根据最终答案判分：推理文字写得漂亮但数字错误仍算错；中间推理不完整但最终数字正确仍会通过。因此它适合程序化奖励，却不能单独评价推理过程质量。
+
+### HumanEval
+
+HumanEval 衡量 Python 代码生成能力。NanoChat 提取模型生成的程序，与题目测试代码组合并实际执行；只有通过测试才算成功。
+
+默认单次采样时，它相当于 `pass@1`。这个指标关心功能正确性，不关心代码是否与参考答案文字相似。结果会受到采样次数、temperature、最大生成长度以及执行超时设置影响。
+
+### SpellingBee
+
+SpellingBee 测试模型能否拼出单词并统计指定字母出现次数，例如“`strawberry` 中有几个 `r`”。评测从 `####` 后提取数字，与程序生成的正确计数比较。
+
+它专门检查 Tokenizer 容易掩盖的字符级能力：模型内部处理的是 Token，并不天然看到单词由哪些字母组成。
+
+### Generative Accuracy 与 num_samples
+
+GSM8K、HumanEval 和 SpellingBee 属于生成式任务。对每道题，NanoChat 会生成 `num_samples` 个回答，只要其中任意一个通过就把该题计为成功。
+
+因此：
+
+- `num_samples=1` 时，结果相当于 Pass@1；
+- `num_samples>1` 时，日志虽然仍叫 Accuracy，实际含义更接近 Pass@num_samples。
+
+比较两个模型时必须保持 `num_samples`、temperature、top-k 和最大生成长度相同。
+
+### ChatCORE
+
+ChatCORE 把六个 Chat 任务的 Accuracy 汇总成一个综合指标。其计算流程与 CORE 类似：先扣除随机基线，再求平均。
+
+```text
+centered accuracy = (accuracy - baseline) / (1 - baseline)
+ChatCORE = 所有 Chat 任务 centered accuracy 的平均值
+```
+
+ARC-Easy、ARC-Challenge 和 MMLU 的基线是 25%；GSM8K、HumanEval 和 SpellingBee 的基线是 0%。`ChatCORE=0` 表示整体约等于随机基线，`1` 表示所有任务满分，低于随机水平时也可能出现负数。
+
+ChatCORE 适合看总体趋势，但会隐藏能力迁移：总分上涨时，数学可能明显提升，而代码或知识能力正在下降。因此报告 ChatCORE 时，也应该同时展示六个子任务分数。
+
+## GSM8K RL 评测
+
+NanoChat 的 `chat_rl.py` 使用 GSM8K 的可验证答案作为强化学习信号。
+
+### Average Reward
+
+当前实现直接复用 GSM8K 判分：最终数字正确奖励为 `1`，错误为 `0`。Average Reward 是一个 rollout batch 中二值奖励的平均值：
+
+```text
+average reward = 正确 completion 数 / completion 总数
+```
+
+因此它本质上是训练 rollout 上的正确率，不是通用“回答质量分”。它受训练题目分布、采样温度和每题生成数量影响，也不能直接替代独立测试集上的 GSM8K Accuracy。
+
+### Pass@k
+
+Pass@k 表示对同一道题生成 k 个候选答案时，至少有一个正确的比例：
+
+```text
+pass@k = 至少一个候选正确的题数 / 总题数
+```
+
+通常 `Pass@8 ≥ Pass@1`。两者差距较大，说明模型可能找到正确路径，但单次生成不稳定。比较 Pass@k 时必须使用相同的 `k`、temperature、top-k、评测题数和随机种子。
+
+### Average Sequence Length
+
+Average Sequence Length 是 rollout 平均生成长度。它不是能力分数，而是行为和效率指标，可用于发现：
+
+- 模型是否越来越啰嗦；
+- 是否过早停止；
+- 是否因为输出变长而增加训练成本；
+- reward 上升是否只是伴随更长的搜索过程。
+
+需要和 Reward、Pass@k 一起观察，不能单独判断好坏。
+
+## 容易混淆但不属于能力评测的指标
+
+### Training Loss
+
+Training Loss 是优化器直接最小化的 Token 级交叉熵，用于判断训练是否正常收敛。它和按字节归一化的 BPB 统计口径不同，数值不能直接比较。
+
+### token/s
+
+`token/s` 表示单位时间处理的 Token 数，是吞吐指标。它受 GPU、batch size、序列长度、梯度累积、通信和编译状态影响，不表示模型能力。
+
+### MFU
+
+MFU（Model FLOPs Utilization）估计模型实际计算量占硬件理论峰值的比例，用于判断训练系统是否充分利用 GPU。MFU 高说明工程效率较好，不代表模型答案更准确；如果硬件峰值 FLOPs 未配置，日志中的 `0` 也可能只是无法计算。
+
+## 如何正确报告 NanoChat 评测结果
+
+一份可比较的报告至少应同时记录：
+
+1. checkpoint、模型深度和参数量；
+2. 评测数据集、split 和样本数量；
+3. categorical 还是 generative 评测；
+4. `num_samples`、temperature、top-k、最大生成长度；
+5. CORE 的 few-shot 与 `max_per_task` 设置；
+6. 每个子任务分数，而不只报 CORE 或 ChatCORE；
+7. 运行代码版本和随机种子。
+
+一句话总结：**BPB 看语言建模，CORE 看 Base Model 的综合 ICL，任务 Accuracy 看具体能力，ChatCORE 看聊天模型总体趋势，Reward 和 Pass@k 看数学 RL 的训练与采样效果；token/s 和 MFU 只看工程效率。**
