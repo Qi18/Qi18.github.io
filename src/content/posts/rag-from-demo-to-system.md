@@ -9,7 +9,7 @@ tags:
 series: "LLM 应用实践"
 seriesPath:
   - "LLM"
-  - "项目实战"
+  - "实验"
   - "LLM 应用实践"
 seriesOrder: 1
 draft: false

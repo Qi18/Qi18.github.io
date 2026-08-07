@@ -35,6 +35,25 @@ export async function getStaticPaths() {
     });
   }
 
+  const legacyPathAliases = [
+    { from: ['LLM', '项目实战'], to: ['LLM', '实验'] },
+    { from: ['LLM', '项目实战', 'NanoChat 源码学习'], to: ['LLM', '实验', 'Nanochat'] },
+    { from: ['LLM', '项目实战', 'LLM 应用实践'], to: ['LLM', '实验', 'LLM 应用实践'] },
+    { from: ['NanoChat 源码学习'], to: ['LLM', '实验', 'Nanochat'] },
+  ];
+
+  for (const alias of legacyPathAliases) {
+    const target = nodes.find((node) => isSameSeriesPath(node.path, alias.to));
+    if (!target || routes.has(alias.from.join('/'))) continue;
+    routes.set(alias.from.join('/'), {
+      path: target.path,
+      posts: target.children.length ? sortPostsByDate(target.posts) : sortPostsBySeries(target.posts),
+      directPosts: target.directPosts,
+      children: target.children,
+      legacy: true,
+    });
+  }
+
   for (const post of posts) {
     const legacyPath = [post.data.series!];
     const fullPath = getSeriesPath(post);

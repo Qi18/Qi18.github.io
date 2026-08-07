@@ -6,11 +6,12 @@ tags:
   - NanoChat
   - LLM
   - 源码阅读
-series: "NanoChat 源码学习"
+series: "源码阅读"
 seriesPath:
   - "LLM"
-  - "项目实战"
-  - "NanoChat 源码学习"
+  - "实验"
+  - "Nanochat"
+  - "源码阅读"
 seriesOrder: 1
 draft: false
 featured: true
