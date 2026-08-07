@@ -22,6 +22,7 @@ export const seriesDefinitions: SeriesDefinition[] = [
       description: 'Nanochat 是 Andrej Karpathy 开源的简洁 LLM 实验框架，面向单机 GPU 节点，覆盖分词、预训练、微调、评测和推理等主要阶段。这个系列沿着真实执行链路记录源码理解与训练实验。',
       links: [
         { label: 'GitHub 项目地址', href: 'https://github.com/karpathy/nanochat' },
+        { label: '我的实际实验', href: 'https://github.com/Qi18/nanochat/tree/experiment/l20-d24-swanlab-20260806' },
       ],
     },
   },

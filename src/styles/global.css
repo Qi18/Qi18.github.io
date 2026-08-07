@@ -931,8 +931,8 @@ a {
 }
 
 .series-overview-links {
-  display: flex;
-  align-items: stretch;
+  display: grid;
+  gap: 12px;
 }
 
 .series-overview-links a {

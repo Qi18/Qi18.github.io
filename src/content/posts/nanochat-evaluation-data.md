@@ -20,8 +20,6 @@ featured: true
 
 NanoChat 不只有一个“模型分数”。Tokenizer、Base Model、Chat Model 和 RL 使用的评测对象不同，输出的指标也回答不同问题。理解这些指标，关键不是背数值，而是先确认：**它在测什么、如何判分、基线是什么，以及数值能不能跨配置比较。**
 
-上一篇：[读懂 NanoChat：先找到真实的训练主线](/posts/nanochat-source-reading/)
-
 ## 指标总览
 
 | 阶段 | 指标 | 主要回答的问题 | 方向 |
