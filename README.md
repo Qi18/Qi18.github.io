@@ -2,6 +2,12 @@
 
 一个使用 Astro 构建的个人博客，内容以 Markdown / MDX 保存。
 
+## V7 功能
+
+- 用 `seriesPath` 把系列组织为可展开的文件夹树。
+- 父目录聚合子系列文章，叶子目录保留系列阅读顺序。
+- 文章页展示完整系列面包屑，同时保留旧的单层系列 URL。
+
 ## V6 功能
 
 - 用“系列”作为唯一的内容组织入口。
@@ -61,6 +67,10 @@ updatedAt: 2026-08-04
 tags:
   - LLM
 series: "系列名称"
+seriesPath:
+  - "一级目录"
+  - "系列名称"
+seriesOrder: 1
 draft: false
 featured: false
 ---
@@ -78,7 +88,7 @@ pnpm build
 1. 在 `src/site.config.ts` 中维护站名和 GitHub 地址。
 2. 在 `astro.config.mjs` 中维护正式域名。
 3. 按需要修改首页与关于页中的个人介绍。
-4. 在 Frontmatter 中使用 `series` 和 `seriesOrder` 组织系列阅读顺序。
+4. 在 Frontmatter 中使用 `seriesPath` 组织目录层级，`series` 保留为叶子系列名，`seriesOrder` 控制系列内阅读顺序。
 
 ## 构建
 

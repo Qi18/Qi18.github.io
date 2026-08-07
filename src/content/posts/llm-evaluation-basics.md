@@ -7,6 +7,9 @@ tags:
   - "评测"
   - "Benchmark"
 series: "LLM 工程"
+seriesPath:
+  - "LLM"
+  - "LLM 工程"
 seriesOrder: 1
 draft: false
 featured: false

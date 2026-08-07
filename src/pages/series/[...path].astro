@@ -1,0 +1,108 @@
+---
+import { getCollection, type CollectionEntry } from 'astro:content';
+import ArticleCard from '../../components/ArticleCard.astro';
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import {
+  buildSeriesTree,
+  flattenSeriesTree,
+  getSeriesPath,
+  getSeriesUrl,
+  isSameSeriesPath,
+  sortPostsByDate,
+  sortPostsBySeries,
+  type SeriesTreeNode,
+} from '../../lib/posts';
+
+interface Props {
+  path: string[];
+  posts: CollectionEntry<'posts'>[];
+  directPosts: CollectionEntry<'posts'>[];
+  children: SeriesTreeNode[];
+  legacy?: boolean;
+}
+
+export async function getStaticPaths() {
+  const posts = await getCollection('posts', ({ data }) => !data.draft && Boolean(data.series));
+  const nodes = flattenSeriesTree(buildSeriesTree(posts));
+  const routes = new Map<string, Props>();
+
+  for (const node of nodes) {
+    routes.set(node.path.join('/'), {
+      path: node.path,
+      posts: node.children.length ? sortPostsByDate(node.posts) : sortPostsBySeries(node.posts),
+      directPosts: node.directPosts,
+      children: node.children,
+    });
+  }
+
+  for (const post of posts) {
+    const legacyPath = [post.data.series!];
+    const fullPath = getSeriesPath(post);
+    const key = legacyPath.join('/');
+    if (!isSameSeriesPath(legacyPath, fullPath) && !routes.has(key)) {
+      const legacyPosts = posts.filter((candidate) => candidate.data.series === post.data.series);
+      routes.set(key, {
+        path: fullPath,
+        posts: sortPostsBySeries(legacyPosts),
+        directPosts: sortPostsBySeries(legacyPosts),
+        children: [],
+        legacy: true,
+      });
+    }
+  }
+
+  return [...routes.entries()].map(([route, props]) => ({
+    params: { path: route },
+    props,
+  }));
+}
+
+const { path, posts, directPosts, children, legacy = false } = Astro.props;
+const title = path.at(-1)!;
+const breadcrumbs = path.map((name, index) => ({ name, path: path.slice(0, index + 1) }));
+---
+
+<BaseLayout title={title} description={`“${path.join(' / ')}”目录下的全部文章。`}>
+  <header class="page-header shell compact">
+    <nav class="series-breadcrumbs" aria-label="系列路径">
+      <a href="/series">系列</a>
+      {breadcrumbs.map((item) => (
+        <><span>/</span><a href={getSeriesUrl(item.path)}>{item.name}</a></>
+      ))}
+    </nav>
+    <p class="section-kicker">{children.length ? 'SERIES FOLDER' : 'SERIES'} / {String(posts.length).padStart(2, '0')} POSTS</p>
+    <h1>{title}</h1>
+    <p>{children.length ? `包含 ${children.length} 个子系列，共 ${posts.length} 篇文章。` : `按阅读顺序整理，共 ${posts.length} 篇文章。`}</p>
+    {legacy && <a class="legacy-series-link" href={getSeriesUrl(path)}>查看新的完整系列路径 →</a>}
+  </header>
+
+  <section class="shell page-content">
+    {children.length > 0 && (
+      <div class="series-folder-grid">
+        {children.map((child) => (
+          <a class="series-folder-card" href={getSeriesUrl(child.path)}>
+            <span class="series-tree-folder" aria-hidden="true"></span>
+            <div><strong>{child.name}</strong><small>{child.posts.length} 篇文章</small></div>
+            <i>→</i>
+          </a>
+        ))}
+      </div>
+    )}
+
+    {directPosts.length > 0 && children.length > 0 && <h2 class="series-content-title">直属文章</h2>}
+    {directPosts.length > 0 && (
+      <div class="article-list series-article-list">
+        {directPosts.map((post) => <ArticleCard post={post} />)}
+      </div>
+    )}
+
+    {children.length > 0 && (
+      <>
+        <h2 class="series-content-title">目录内全部文章</h2>
+        <div class="article-list series-article-list">
+          {posts.map((post) => <ArticleCard post={post} />)}
+        </div>
+      </>
+    )}
+  </section>
+</BaseLayout>

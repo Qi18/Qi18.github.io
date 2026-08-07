@@ -10,6 +10,7 @@ const searchItems = posts.map((post) => ({
   date: post.data.publishedAt.toISOString(),
   tags: post.data.tags,
   series: post.data.series ?? '',
+  seriesPath: post.data.seriesPath?.join(' / ') ?? '',
   url: `/posts/${post.id}/`,
   content: toSearchText(post.body ?? ''),
 }));
@@ -56,7 +57,7 @@ const searchItems = posts.map((post) => ({
         .map((item) => {
           const title = item.title.toLocaleLowerCase('zh-CN');
           const description = item.description.toLocaleLowerCase('zh-CN');
-          const series = item.series.toLocaleLowerCase('zh-CN');
+          const series = `${item.series} ${item.seriesPath}`.toLocaleLowerCase('zh-CN');
           const tags = item.tags.join(' ').toLocaleLowerCase('zh-CN');
           const content = item.content.toLocaleLowerCase('zh-CN');
           const haystack = `${title} ${description} ${series} ${tags} ${content}`;

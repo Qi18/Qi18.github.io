@@ -8,6 +8,7 @@ interface Props {
       publishedAt: Date;
       tags: string[];
       series?: string;
+      seriesPath?: string[];
     };
   };
   featured?: boolean;
@@ -19,12 +20,13 @@ const date = post.data.publishedAt.toLocaleDateString('zh-CN', {
   month: '2-digit',
   day: '2-digit',
 });
+const seriesLabel = post.data.seriesPath?.join(' / ') ?? post.data.series;
 ---
 
 <article class:list={['article-card', { featured }]}>
   <div class="article-card-topline">
     <time datetime={post.data.publishedAt.toISOString()}>{date}</time>
-    {post.data.series && <span>{post.data.series}</span>}
+    {seriesLabel && <span>{seriesLabel}</span>}
   </div>
   <h3><a href={`/posts/${post.id}/`}>{post.data.title}</a></h3>
   <p>{post.data.description}</p>

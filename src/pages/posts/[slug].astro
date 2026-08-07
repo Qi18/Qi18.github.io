@@ -1,7 +1,7 @@
 ---
 import { getCollection, render, type CollectionEntry } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getReadingMinutes, sortPostsByDate } from '../../lib/posts';
+import { getReadingMinutes, getSeriesPath, getSeriesUrl, sortPostsByDate } from '../../lib/posts';
 
 export async function getStaticPaths() {
   const posts = sortPostsByDate(await getCollection('posts', ({ data }) => !data.draft));
@@ -32,19 +32,28 @@ const formatDate = (value: Date) => value.toLocaleDateString('zh-CN', {
 });
 const date = formatDate(post.data.publishedAt);
 const updatedDate = post.data.updatedAt ? formatDate(post.data.updatedAt) : undefined;
+const seriesPath = getSeriesPath(post);
+const seriesBreadcrumbs = seriesPath.map((name, index) => ({ name, path: seriesPath.slice(0, index + 1) }));
 ---
 
 <BaseLayout title={post.data.title} description={post.data.description} article>
   <div class="reading-progress" aria-hidden="true"><span></span></div>
   <article class="post shell">
     <header class="post-header">
-      <a class="back-link" href="/series">← 返回系列</a>
-      {post.data.series && (
-        <p class="post-series">
-          <a href={`/series/${encodeURIComponent(post.data.series)}/`}>
-            {post.data.series}{post.data.seriesOrder ? ` · ${String(post.data.seriesOrder).padStart(2, '0')}` : ''}
-          </a>
-        </p>
+      {seriesBreadcrumbs.length > 0 ? (
+        <nav class="series-breadcrumbs post-series-breadcrumbs" aria-label="系列路径">
+          <a href="/series">系列</a>
+          {seriesBreadcrumbs.map((item, index) => (
+            <>
+              <span>/</span>
+              <a href={getSeriesUrl(item.path)}>
+                {item.name}{index === seriesBreadcrumbs.length - 1 && post.data.seriesOrder ? ` · ${String(post.data.seriesOrder).padStart(2, '0')}` : ''}
+              </a>
+            </>
+          ))}
+        </nav>
+      ) : (
+        <a class="back-link" href="/series">← 返回系列</a>
       )}
       <h1>{post.data.title}</h1>
       <p class="post-description">{post.data.description}</p>

@@ -1,17 +1,11 @@
 ---
 import { getCollection } from 'astro:content';
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { sortPostsByDate } from '../../lib/posts';
+import SeriesTree from '../../components/SeriesTree.astro';
+import { buildSeriesTree, sortPostsByDate } from '../../lib/posts';
 
 const posts = sortPostsByDate(await getCollection('posts', ({ data }) => !data.draft && Boolean(data.series)));
-const grouped = posts.reduce<Record<string, typeof posts>>((result, post) => {
-  const series = post.data.series!;
-  (result[series] ??= []).push(post);
-  return result;
-}, {});
-const seriesList = Object.entries(grouped).sort((a, b) =>
-  b[1][0].data.publishedAt.valueOf() - a[1][0].data.publishedAt.valueOf()
-);
+const seriesTree = buildSeriesTree(posts);
 ---
 
 <BaseLayout title="系列" description="沿着系列阅读，把零散知识连接成完整路线。">
@@ -22,18 +16,12 @@ const seriesList = Object.entries(grouped).sort((a, b) =>
   </header>
 
   <section class="shell page-content">
-    <div class="series-index-grid">
-      {seriesList.map(([series, entries], index) => (
-        <a class="series-index-card" href={`/series/${encodeURIComponent(series)}/`}>
-          <div class="series-index-topline">
-            <span>{String(index + 1).padStart(2, '0')} / SERIES</span>
-            <span>{entries.length} 篇</span>
-          </div>
-          <h2>{series}</h2>
-          <p>{entries[0].data.description}</p>
-          <span class="series-index-action">进入系列 →</span>
-        </a>
-      ))}
+    <div class="series-tree-panel">
+      <div class="series-tree-heading">
+        <span>系列目录</span>
+        <span>{seriesTree.length} 个根目录 · {posts.length} 篇文章</span>
+      </div>
+      <SeriesTree nodes={seriesTree} />
     </div>
   </section>
 </BaseLayout>

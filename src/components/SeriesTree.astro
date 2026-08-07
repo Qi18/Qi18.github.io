@@ -1,0 +1,36 @@
+---
+import type { SeriesTreeNode } from '../lib/posts';
+import { getSeriesUrl } from '../lib/posts';
+
+interface Props {
+  nodes: SeriesTreeNode[];
+  depth?: number;
+}
+
+const { nodes, depth = 0 } = Astro.props;
+---
+
+<ul class:list={['series-tree', { 'series-tree-root': depth === 0 }]}>
+  {nodes.map((node) => (
+    <li>
+      {node.children.length > 0 ? (
+        <details open>
+          <summary>
+            <span class="series-tree-toggle" aria-hidden="true"></span>
+            <span class="series-tree-folder" aria-hidden="true"></span>
+            <a href={getSeriesUrl(node.path)}>{node.name}</a>
+            <span class="series-tree-count">{node.posts.length} 篇</span>
+          </summary>
+          <Astro.self nodes={node.children} depth={depth + 1} />
+        </details>
+      ) : (
+        <div class="series-tree-leaf">
+          <span class="series-tree-spacer" aria-hidden="true"></span>
+          <span class="series-tree-folder" aria-hidden="true"></span>
+          <a href={getSeriesUrl(node.path)}>{node.name}</a>
+          <span class="series-tree-count">{node.posts.length} 篇</span>
+        </div>
+      )}
+    </li>
+  ))}
+</ul>

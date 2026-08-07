@@ -8,6 +8,10 @@ tags:
   - LLM
   - 评测
 series: "NanoChat 源码学习"
+seriesPath:
+  - "LLM"
+  - "项目实战"
+  - "NanoChat 源码学习"
 seriesOrder: 2
 draft: false
 featured: true

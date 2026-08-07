@@ -7,6 +7,9 @@ tags:
   - "Tokenizer"
   - "NLP"
 series: "LLM 基础"
+seriesPath:
+  - "LLM"
+  - "LLM 基础"
 seriesOrder: 1
 draft: false
 featured: false

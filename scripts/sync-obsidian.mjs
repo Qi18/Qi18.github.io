@@ -129,6 +129,15 @@ function renderFrontmatter(data) {
   lines.push('tags:');
   for (const tag of tags) lines.push(`  - ${yamlString(tag)}`);
   if (data.series) lines.push(`series: ${yamlString(data.series)}`);
+  const seriesPath = Array.isArray(data.seriesPath)
+    ? data.seriesPath
+    : data.seriesPath
+      ? [data.seriesPath]
+      : [];
+  if (seriesPath.length) {
+    lines.push('seriesPath:');
+    for (const segment of seriesPath) lines.push(`  - ${yamlString(segment)}`);
+  }
   if (data.seriesOrder !== undefined && data.seriesOrder !== '') {
     lines.push(`seriesOrder: ${Number(data.seriesOrder)}`);
   }
