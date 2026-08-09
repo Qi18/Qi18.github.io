@@ -38,10 +38,11 @@ export async function getStaticPaths() {
 
   const legacyPathAliases = [
     { from: ['LLM', '项目实战'], to: ['LLM', '实验'] },
-    { from: ['LLM', '项目实战', 'NanoChat 源码学习'], to: ['LLM', '实验', 'Nanochat'] },
+    { from: ['LLM', '项目实战', 'NanoChat 源码学习'], to: ['LLM', '实验', 'NanoChat'] },
     { from: ['LLM', '项目实战', 'LLM 应用实践'], to: ['LLM', '实验', 'LLM 应用实践'] },
-    { from: ['NanoChat 源码学习'], to: ['LLM', '实验', 'Nanochat'] },
-    { from: ['实验过程'], to: ['LLM', '实验', 'Nanochat', '实验过程'] },
+    { from: ['NanoChat 源码学习'], to: ['LLM', '实验', 'NanoChat'] },
+    { from: ['实验过程'], to: ['LLM', '实验', 'NanoChat', '实验过程'] },
+    { from: ['LLM', '实验', 'Nanochat'], to: ['LLM', '实验', 'NanoChat'] },
   ];
 
   for (const alias of legacyPathAliases) {

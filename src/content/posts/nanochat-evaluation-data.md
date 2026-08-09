@@ -11,7 +11,7 @@ series: "源码阅读"
 seriesPath:
   - "LLM"
   - "实验"
-  - "Nanochat"
+  - "NanoChat"
   - "源码阅读"
 seriesOrder: 2
 draft: false
