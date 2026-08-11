@@ -304,6 +304,102 @@ v_full = v_cache[:, :end_pos, :, :]
 
 这样历史 Token 的 K/V 不需要重复计算。每轮生成只计算新 Token 的 Query、Key 和 Value，再把新 K/V 追加到缓存末尾。
 
+### 为什么只缓存 K 和 V
+
+生成全局位置 `t` 时，当前层需要：
+
+```text
+当前 Query：q_t
+历史 Key：  k_0 ... k_t
+历史 Value：v_0 ... v_t
+```
+
+注意力计算为：
+
+```text
+scores_t = q_t @ [k_0 ... k_t]ᵀ / √D
+out_t    = softmax(scores_t) @ [v_0 ... v_t]
+```
+
+历史 Token 的 K/V 已经计算完成，并且后续不会变化，因此可以重复使用。Query 则只在自己的位置使用一次：生成位置 5 使用 `q5`，下一轮生成位置 6 使用新的 `q6`，旧的 `q5` 不再参与计算，所以不需要缓存 Q。
+
+Attention Scores 也不适合缓存。每个新 Query 都必须与历史 Key 重新点积，旧的 `q5 @ Kᵀ` 无法用于 `q6 @ Kᵀ`；保存完整 Scores 还会产生随序列长度平方增长的 `T×T` 空间。因此只保存稳定、可复用的 K/V，是计算量和显存之间的折中。
+
+### 整体缓存为什么是五个维度
+
+`flash_attn_with_kvcache()` 收到的是某一层的缓存视图：
+
+```text
+(B, T_max, H_kv, D)
+```
+
+但 `Engine` 中完整的 KV Cache 还要包含所有 Transformer 层，因此整体形状是：
+
+```text
+k_cache: (L, B, T_max, H_kv, D)
+v_cache: (L, B, T_max, H_kv, D)
+```
+
+每个维度都来自推理时必须保留的一类信息：
+
+| 维度 | 为什么必须存在 |
+| --- | --- |
+| `L` | 每一层的输入和 `Wk/Wv` 不同，同一个 Token 在不同层产生的 K/V 不能共享 |
+| `B` | Batch 中每条序列的 Prompt 不同，需要独立缓存 |
+| `T_max` | 完整因果注意力可能访问每一个历史 Token |
+| `H_kv` | 每个 KV Head 都有自己的一组 K/V；GQA 通过减少它来降低缓存大小 |
+| `D` | 每个 Head 的 Key 和 Value 都是长度为 `D` 的向量 |
+
+例如同一个 Token 在第 0 层和第 1 层会分别计算：
+
+```text
+k_t^(0) = hidden_t^(0) @ Wk^(0)
+k_t^(1) = hidden_t^(1) @ Wk^(1)
+```
+
+两层的 Hidden State 和投影矩阵都不同，所以 KV Cache 必须带有 `L` 这一维。代码通过 `get_layer_cache(layer_idx)` 取出当前层的 `(B,T_max,H_kv,D)` 视图，再交给 Attention。
+
+### 为什么预分配 T_max
+
+如果每生成一个 Token 都重新创建更大的张量，过程会变成：
+
+```text
+长度 5 的 Cache
+  ↓ 申请长度 6 的新显存，并复制旧数据
+长度 6 的 Cache
+  ↓ 申请长度 7 的新显存，并复制旧数据
+长度 7 的 Cache
+```
+
+这会造成频繁的显存申请、旧数据复制和显存碎片。预先创建 `T_max` 容量后，每轮只需原地写入下一个位置：
+
+```text
+[k0 k1 k2 k3 k4 _  _  _]
+                   ↑
+                 写入 k5
+```
+
+它还有两个工程收益：Tensor 地址保持稳定，方便 CUDA Graph 等优化；FA3 的 `flash_attn_with_kvcache` 也可以直接原地更新缓存。
+
+需要区分的是：NanoChat 的 `KVCache` 对象一旦创建，就会按指定形状完整分配张量；但这个对象是在生成请求到达后创建的，不是模型部署时永久创建一份最大缓存。当前生成流程先为 Prompt 创建 Batch 1 的 Prefill Cache，再按 `num_samples` 和预计总长度创建 Decode Cache，复制有效前缀后释放 Prefill Cache。
+
+### 固定缓存与 Paged KV Cache
+
+固定连续张量实现简单、访问直接，但请求很短时也会预留 `T_max` 空间；多个请求长度差异很大时，显存利用率会下降。
+
+生产推理系统通常在模型部署时创建全局 KV Cache 内存池，再按固定大小的 Block 分给请求：
+
+```text
+全局 KV Cache 内存池
+├─ 请求 A：Block 0、1、2
+├─ 请求 B：Block 3～8
+└─ 空闲 Block：等待后续请求
+```
+
+这就是 Paged KV Cache 的基本思路：缓存内容仍然是各层、各 Token 的 K/V，只是物理存储不要求每条序列占据一整块连续的最大长度空间。
+
+对于纯滑动窗口层，理论上还可以只保留最近 `window+1` 个位置，并用环形缓存覆盖更早的数据。NanoChat 当前仍为各层统一分配 `T_max`：一方面实现更简单，另一方面 `SSSL` 模式中仍有完整上下文层，最后一层也固定使用完整上下文。
+
 KV Cache 的显存占用可以估算为：
 
 ```text
