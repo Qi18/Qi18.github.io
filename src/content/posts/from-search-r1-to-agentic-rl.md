@@ -33,6 +33,32 @@ Search-R1 的典型交互循环可以概括为：
 
 不过，这类实验通常仍然具有几个明显边界：任务主要是问答，工具主要负责获取信息，轨迹相对较短，最终答案的 EM、F1 或规则奖励仍是核心训练信号。
 
+## Search-R1 生态项目地图
+
+Search-R1 官方 README 的 **Awesome work powered or inspired by Search-R1** 清单目前收录了 23 个代表项目。它们大多发表于 2025 年，可以看作搜索型 Agent RL 从单一检索闭环向多模态、多工具和规模化训练扩展的过程。
+
+### 大致时间线
+
+- **2025 年 4 月前后：建立搜索 RL 基线。** DeepResearcher、Multimodal-Search-R1、OTC 和 ZeroSearch 分别把方向扩展到真实网页研究、多模态搜索、工具调用效率以及不连接真实搜索引擎的训练。
+- **2025 年 5 月前后：细化搜索过程。** IKEA、Scent of Knowledge、AutoRefine、O^2-Searcher、MaskSearch、VRAG-RL、R1-Code-Interpreter 和 StepSearch 开始研究内外知识选择、信息觅食、边搜索边修正、开放式问答、搜索预训练、视觉检索、代码执行和逐步奖励。
+- **2025 年 6 月前后：走向稳定多轮和多工具。** R-Search、SimpleTIR、Router-R1 与 SkyRL 分别探索多奖励、稳定端到端训练、多轮路由聚合和模块化训练基础设施。
+- **2025 年 7—8 月：扩大动作空间和训练规模。** AutoTIR、ASearcher 与 ParallelSearch 将重点推进到自主选择工具、大规模搜索 Agent RL，以及查询分解后的并行检索。
+- **2025 年 9—10 月：增强探索和证据组织。** verl-tool、Tree-GRPO、EviNote-RAG 与 GlobalRAG 进一步覆盖多样化工具、树搜索、证据笔记和全局多跳推理。
+
+以上月份按论文编号及项目公开顺序粗略划分，重点是观察研究主题的迁移，不代表严格的首发日期。
+
+### 按研究问题分类
+
+| 方向 | 代表项目 | 主要推进 |
+| --- | --- | --- |
+| 深度搜索与开放问答 | [DeepResearcher](https://github.com/GAIR-NLP/DeepResearcher)、[O^2-Searcher](https://arxiv.org/pdf/2505.16582)、[ASearcher](https://arxiv.org/abs/2508.07976)、[GlobalRAG](https://arxiv.org/pdf/2510.20548v1) | 从单跳问答扩展到真实网页、开放式问题、大规模训练和全局多跳推理。 |
+| 搜索策略、奖励与效率 | [OTC](https://arxiv.org/pdf/2504.14870)、[ZeroSearch](https://github.com/Alibaba-NLP/ZeroSearch)、[IKEA](https://github.com/hzy312/knowledge-r1)、[Scent of Knowledge](https://arxiv.org/abs/2505.09316)、[AutoRefine](https://www.arxiv.org/pdf/2505.11277)、[R-Search](https://arxiv.org/abs/2506.04185)、[StepSearch](https://arxiv.org/pdf/2505.15107)、[SimpleTIR](https://simpletir.notion.site/report)、[ParallelSearch](https://www.arxiv.org/abs/2508.09303)、[Tree-GRPO](https://arxiv.org/abs/2509.21240) | 减少无效工具调用，在训练中模拟搜索，学习何时检索、如何修正、如何分步奖励，并引入并行或树形探索。 |
+| 多模态与证据增强 RAG | [Multimodal-Search-R1](https://github.com/EvolvingLMMs-Lab/multimodal-search-r1)、[VRAG-RL](https://arxiv.org/abs/2505.22019)、[EviNote-RAG](https://arxiv.org/abs/2509.00877) | 将搜索对象从纯文本扩展到图像和视觉丰富文档，并显式整理支持答案的证据。 |
+| 通用工具与路由 | [R1-Code-Interpreter](https://arxiv.org/abs/2505.21668)、[Router-R1](https://arxiv.org/pdf/2506.09033)、[AutoTIR](https://arxiv.org/pdf/2507.21836) | 从固定搜索动作扩展到代码执行、多个工具之间的路由和自主工具集成推理。 |
+| 预训练与训练基础设施 | [MaskSearch](https://arxiv.org/pdf/2505.20285)、[SkyRL](https://skyrl.readthedocs.io/en/latest/)、[verl-tool](https://arxiv.org/pdf/2509.01055) | 将搜索能力前置到预训练阶段，并提供模块化、支持多种工具的 RL 训练栈。 |
+
+这些工作并不都等同于完整的环境型 Agentic RL。多数仍围绕“检索或工具增强的推理”优化；其中 DeepResearcher、Router-R1、AutoTIR、R1-Code-Interpreter 等由于环境更开放、工具更丰富，更接近下一阶段的 Agentic RL。
+
 ## 新 Agentic RL 的变化
 
 一句话概括：
