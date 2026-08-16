@@ -43,6 +43,7 @@ export async function getStaticPaths() {
     { from: ['LLM', '实验', 'Nanochat'], to: ['LLM', 'Train', 'NanoChat'] },
     { from: ['LLM', '实验', 'NanoChat'], to: ['LLM', 'Train', 'NanoChat'] },
     { from: ['LLM', '实验', 'Agentic RL'], to: ['LLM', 'Agent RL'] },
+    { from: ['Search-R1'], to: ['LLM', 'Agent RL', 'Search-R1'] },
   ];
 
   for (const alias of legacyPathAliases) {

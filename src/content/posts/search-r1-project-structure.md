@@ -7,11 +7,12 @@ tags:
   - Agentic RL
   - Reinforcement Learning
   - veRL
-series: "Search-R1"
+series: "源码阅读"
 seriesPath:
   - LLM
   - Agent RL
   - Search-R1
+  - 源码阅读
 seriesOrder: 1
 draft: false
 featured: true
@@ -250,4 +251,4 @@ GRPO 模式不创建 Critic，而是给同一道题采样多条轨迹，通过�
 ## 项目链接
 
 - [Search-R1 官方仓库](https://github.com/PeterGriffinJin/Search-R1)
-- [我们的 Search-R1 实验仓库](https://github.com/Qi18/search-r1-lab)
+- [我们的 Search-R1 实验仓库](https://github.com/Qi18/search-r1-lab/tree/experiment/l20-search-r1-20260816)
