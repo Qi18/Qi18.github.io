@@ -6,10 +6,10 @@ tags:
   - "LLM"
   - "评测"
   - "Benchmark"
-series: "LLM 工程"
+series: "评测"
 seriesPath:
   - "LLM"
-  - "LLM 工程"
+  - "评测"
 seriesOrder: 1
 draft: false
 featured: false

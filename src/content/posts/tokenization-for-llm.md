@@ -6,10 +6,10 @@ tags:
   - "LLM"
   - "Tokenizer"
   - "NLP"
-series: "LLM 基础"
+series: "基础"
 seriesPath:
   - "LLM"
-  - "LLM 基础"
+  - "基础"
 seriesOrder: 1
 draft: false
 featured: false

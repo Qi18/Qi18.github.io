@@ -7,11 +7,10 @@ tags:
   - Search-R1
   - Reinforcement Learning
   - Agent
-series: "Agentic RL"
+series: "Agent RL"
 seriesPath:
   - LLM
-  - 实验
-  - Agentic RL
+  - Agent RL
 seriesOrder: 1
 draft: false
 featured: true
