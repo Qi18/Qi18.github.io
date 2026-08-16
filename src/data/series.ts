@@ -40,7 +40,7 @@ export const seriesDefinitions: SeriesDefinition[] = [
       description: 'Search-R1 基于 veRL 训练推理与搜索交错的语言模型。这个子系列记录官方代码结构、检索服务、PPO/GRPO 训练链路以及我们的实际实验。',
       links: [
         { label: '官方项目', href: 'https://github.com/PeterGriffinJin/Search-R1' },
-        { label: '我的实际实验', href: 'https://github.com/Qi18/search-r1-lab/tree/experiment/l20-search-r1-20260816' },
+        { label: '我的实际实验', href: 'https://github.com/Qi18/Search-R1/tree/experiment/l20-search-r1-20260816' },
       ],
     },
   },
