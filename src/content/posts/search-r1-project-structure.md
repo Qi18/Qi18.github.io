@@ -251,4 +251,4 @@ GRPO 模式不创建 Critic，而是给同一道题采样多条轨迹，通过�
 ## 项目链接
 
 - [Search-R1 官方仓库](https://github.com/PeterGriffinJin/Search-R1)
-- [我们的 Search-R1 实验仓库](https://github.com/Qi18/Search-R1/tree/experiment/l20-search-r1-20260816)
+- [我们的 Search-R1 实验仓库](https://github.com/Qi18/Search-R1/tree/experiment)
